@@ -1,6 +1,6 @@
 // ============================================================
-// Math Treasure Hunt - Game Screen
-// Core gameplay with questions, answers, and feedback
+// Math Treasure Hunt - Game Screen (Polished)
+// Core gameplay with improved question cards, responsive layout
 // ============================================================
 
 import { router, useLocalSearchParams } from 'expo-router';
@@ -10,22 +10,20 @@ import Animated, {
   FadeIn,
   FadeInDown,
   FadeInUp,
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withSpring,
-  withTiming,
+  SlideInRight,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { TreasureMapBg } from '../components/TreasureMapBg';
 import { AnswerButton } from '../components/AnswerButton';
 import { AnimatedCharacter } from '../components/AnimatedCharacter';
 import { ProgressBar } from '../components/ProgressBar';
 import { CoinDisplay } from '../components/CoinDisplay';
+import { Confetti } from '../components/Confetti';
 import { useGameEngine } from '../hooks/useGameEngine';
 import { useGameProgress } from '../hooks/useGameProgress';
 import { CORRECT_MESSAGES, WRONG_MESSAGES, GAME_WORLDS } from '../constants/gameData';
-import { BORDER_RADIUS, COLORS, FONTS, SHADOWS, SPACING } from '../constants/theme';
+import { BORDER_RADIUS, COLORS, FONTS, SHADOWS, SPACING, responsive } from '../constants/theme';
 import { Difficulty, LevelResult, WorldId } from '../types';
 
 export default function GameScreen() {
@@ -43,6 +41,7 @@ export default function GameScreen() {
   const { handleLevelComplete } = useGameProgress();
   const [feedbackMsg, setFeedbackMsg] = useState('');
   const [coinsEarned, setCoinsEarned] = useState(0);
+  const [showMiniConfetti, setShowMiniConfetti] = useState(false);
 
   const handleComplete = useCallback(
     (result: LevelResult) => {
@@ -70,7 +69,6 @@ export default function GameScreen() {
     isAnswered,
     selectedAnswer,
     isCorrect,
-    progressPercent,
     handleAnswer,
     handleNext,
     handleRetry,
@@ -78,13 +76,14 @@ export default function GameScreen() {
 
   const world = GAME_WORLDS.find((w) => w.id === worldId);
 
-  // Handle answer selection with feedback message
   const onAnswerPress = (answer: number) => {
     handleAnswer(answer);
     if (answer === currentQuestion?.correctAnswer) {
       const msg = CORRECT_MESSAGES[Math.floor(Math.random() * CORRECT_MESSAGES.length)];
       setFeedbackMsg(msg);
       setCoinsEarned((prev) => prev + 5);
+      setShowMiniConfetti(true);
+      setTimeout(() => setShowMiniConfetti(false), 2000);
     } else {
       const msg = WRONG_MESSAGES[Math.floor(Math.random() * WRONG_MESSAGES.length)];
       setFeedbackMsg(msg);
@@ -94,67 +93,83 @@ export default function GameScreen() {
   if (!currentQuestion || !world) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading...</Text>
+        <Text style={styles.loadingEmoji}>🧮</Text>
+        <Text style={styles.loadingText}>Getting ready...</Text>
       </View>
     );
   }
 
+  const progressValue = (currentIndex + (isAnswered && isCorrect ? 1 : 0)) / totalQuestions;
+
   return (
-    <LinearGradient colors={['#FFF8E7', '#E8F6FF']} style={styles.container}>
+    <TreasureMapBg variant="game">
+      {/* Mini confetti on correct answer */}
+      <Confetti isActive={showMiniConfetti} />
+
       <View style={[styles.content, { paddingTop: insets.top + SPACING.sm }]}>
         {/* Top bar */}
         <View style={styles.topBar}>
           <Pressable onPress={() => router.back()} style={styles.exitButton}>
             <Text style={styles.exitText}>✕</Text>
           </Pressable>
-          <View style={styles.progressContainer}>
+
+          <View style={styles.progressSection}>
             <ProgressBar
-              progress={(currentIndex + (isAnswered ? 1 : 0)) / totalQuestions}
-              height={12}
+              progress={progressValue}
+              height={14}
               colors={world.gradientColors}
             />
+            <Text style={styles.questionCount}>
+              {currentIndex + 1} / {totalQuestions}
+            </Text>
           </View>
-          <CoinDisplay coins={coinsEarned} />
+
+          <CoinDisplay coins={coinsEarned} size="small" showPlus />
         </View>
 
-        {/* Question counter */}
-        <Text style={styles.questionCounter}>
-          Question {currentIndex + 1} of {totalQuestions}
-        </Text>
-
-        {/* Character */}
-        <View style={styles.characterContainer}>
+        {/* Character with speech bubble */}
+        <View style={styles.characterSection}>
           <AnimatedCharacter
             emoji={world.emoji}
             mood={isAnswered ? (isCorrect ? 'happy' : 'encouraging') : 'thinking'}
-            size={60}
+            size={responsive.font(55)}
+            message={isAnswered ? feedbackMsg : undefined}
+            showPlatform={false}
           />
         </View>
 
         {/* Question card */}
         <Animated.View
-          entering={FadeInDown.duration(400)}
+          entering={SlideInRight.duration(350).springify()}
           key={currentQuestion.id}
           style={styles.questionCard}
         >
-          <Text style={styles.questionText}>{currentQuestion.question}</Text>
-          {currentQuestion.visual && (
-            <Text style={styles.visualText}>{currentQuestion.visual}</Text>
-          )}
-        </Animated.View>
-
-        {/* Feedback message */}
-        {isAnswered && (
-          <Animated.Text
-            entering={FadeIn.duration(300)}
-            style={[
-              styles.feedbackText,
-              { color: isCorrect ? COLORS.success : COLORS.warning },
-            ]}
+          <LinearGradient
+            colors={['#FFFFFF', '#FAFCFF']}
+            style={styles.questionGradient}
           >
-            {feedbackMsg}
-          </Animated.Text>
-        )}
+            {/* Question type badge */}
+            <View style={styles.typeBadge}>
+              <Text style={styles.typeBadgeText}>
+                {currentQuestion.type === 'addition' ? '➕' :
+                 currentQuestion.type === 'subtraction' ? '➖' :
+                 currentQuestion.type === 'counting' ? '🔢' :
+                 currentQuestion.type === 'comparison' ? '⚖️' :
+                 currentQuestion.type === 'missing_number' ? '❓' : '🔷'}
+              </Text>
+            </View>
+
+            <Text style={styles.questionText}>
+              {currentQuestion.question}
+            </Text>
+
+            {currentQuestion.visual && (
+              <View style={styles.visualContainer}>
+                <Text style={styles.visualText}>{currentQuestion.visual}</Text>
+              </View>
+            )}
+          </LinearGradient>
+        </Animated.View>
 
         {/* Answer options */}
         <View style={styles.answersContainer}>
@@ -178,123 +193,103 @@ export default function GameScreen() {
         {isAnswered && (
           <Animated.View entering={FadeInUp.duration(300)} style={styles.actionContainer}>
             {isCorrect ? (
-              <Pressable onPress={handleNext} style={styles.nextButton}>
+              <Pressable onPress={handleNext} style={styles.actionButton}>
                 <LinearGradient
-                  colors={[COLORS.success, COLORS.green]}
-                  style={styles.nextGradient}
+                  colors={[COLORS.success, COLORS.greenDark]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.actionGradient}
                 >
-                  <Text style={styles.nextText}>
-                    {currentIndex >= totalQuestions - 1 ? 'Finish! 🎉' : 'Next →'}
+                  <Text style={styles.actionText}>
+                    {currentIndex >= totalQuestions - 1 ? '🎉 Finish!' : 'Next →'}
                   </Text>
                 </LinearGradient>
               </Pressable>
             ) : (
-              <Pressable onPress={handleRetry} style={styles.nextButton}>
+              <Pressable onPress={handleRetry} style={styles.actionButton}>
                 <LinearGradient
-                  colors={[COLORS.primary, COLORS.primaryLight]}
-                  style={styles.nextGradient}
+                  colors={[COLORS.primary, COLORS.primaryDark]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.actionGradient}
                 >
-                  <Text style={styles.nextText}>Try Again 💪</Text>
+                  <Text style={styles.actionText}>Try Again 💪</Text>
                 </LinearGradient>
               </Pressable>
             )}
           </Animated.View>
         )}
       </View>
-    </LinearGradient>
+    </TreasureMapBg>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadingText: { fontSize: FONTS.sizes.lg },
-  content: {
-    flex: 1,
-    paddingHorizontal: SPACING.md,
+  loadingContainer: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: COLORS.background,
   },
+  loadingEmoji: { fontSize: 50, marginBottom: SPACING.md },
+  loadingText: { fontSize: FONTS.sizes.lg, color: COLORS.textSecondary },
+  content: { flex: 1, paddingHorizontal: SPACING.md },
+  // Top bar
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.sm,
+    flexDirection: 'row', alignItems: 'center',
+    gap: SPACING.sm, marginBottom: SPACING.sm,
   },
   exitButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40, height: 40, borderRadius: 20,
     backgroundColor: COLORS.cardBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
     ...SHADOWS.small,
+    borderWidth: 1.5, borderColor: COLORS.border,
   },
-  exitText: {
-    fontSize: FONTS.sizes.lg,
-    color: COLORS.textSecondary,
-    fontWeight: FONTS.weights.bold,
+  exitText: { fontSize: 18, color: COLORS.textSecondary, fontWeight: FONTS.weights.bold },
+  progressSection: { flex: 1 },
+  questionCount: {
+    fontSize: FONTS.sizes.xs, color: COLORS.textSecondary,
+    textAlign: 'center', marginTop: 3, fontWeight: FONTS.weights.semibold,
   },
-  progressContainer: { flex: 1 },
-  questionCounter: {
-    fontSize: FONTS.sizes.sm,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.sm,
-  },
-  characterContainer: {
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
+  // Character
+  characterSection: { alignItems: 'center', marginBottom: SPACING.sm, minHeight: 80 },
+  // Question card
   questionCard: {
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.lg,
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-    ...SHADOWS.medium,
+    borderRadius: BORDER_RADIUS.xl, marginBottom: SPACING.md,
+    ...SHADOWS.large, overflow: 'hidden',
   },
+  questionGradient: {
+    padding: SPACING.lg, borderRadius: BORDER_RADIUS.xl,
+    alignItems: 'center', borderWidth: 2, borderColor: COLORS.border,
+  },
+  typeBadge: {
+    position: 'absolute', top: 10, left: 14,
+    backgroundColor: COLORS.surfaceLight,
+    width: 32, height: 32, borderRadius: 16,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  typeBadgeText: { fontSize: 16 },
   questionText: {
-    fontSize: FONTS.sizes.xl,
-    fontWeight: FONTS.weights.bold,
-    color: COLORS.textPrimary,
-    textAlign: 'center',
+    fontSize: responsive.font(22), fontWeight: FONTS.weights.bold,
+    color: COLORS.textPrimary, textAlign: 'center',
+    lineHeight: responsive.font(30),
   },
-  visualText: {
-    fontSize: 36,
-    marginTop: SPACING.md,
-    letterSpacing: 4,
-  },
-  feedbackText: {
-    fontSize: FONTS.sizes.lg,
-    fontWeight: FONTS.weights.bold,
-    textAlign: 'center',
-    marginBottom: SPACING.sm,
-  },
-  answersContainer: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  answersGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  actionContainer: {
-    paddingBottom: SPACING.xl,
-  },
-  nextButton: {
-    borderRadius: BORDER_RADIUS.lg,
-    overflow: 'hidden',
-    ...SHADOWS.medium,
-  },
-  nextGradient: {
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.xl,
-    alignItems: 'center',
+  visualContainer: {
+    marginTop: SPACING.md, backgroundColor: COLORS.surfaceLight,
+    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
     borderRadius: BORDER_RADIUS.lg,
   },
-  nextText: {
-    fontSize: FONTS.sizes.lg,
-    fontWeight: FONTS.weights.bold,
-    color: COLORS.textLight,
+  visualText: { fontSize: responsive.font(32), letterSpacing: 6, textAlign: 'center' },
+  // Answers
+  answersContainer: { flex: 1, justifyContent: 'center' },
+  answersGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
+  // Action
+  actionContainer: { paddingBottom: SPACING.lg },
+  actionButton: { borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', ...SHADOWS.large },
+  actionGradient: {
+    paddingVertical: SPACING.md, paddingHorizontal: SPACING.xl,
+    alignItems: 'center', borderRadius: BORDER_RADIUS.xl,
+  },
+  actionText: {
+    fontSize: FONTS.sizes.lg, fontWeight: FONTS.weights.extrabold, color: COLORS.textLight,
   },
 });

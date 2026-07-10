@@ -7,4 +7,5 @@ export { LevelButton } from './LevelButton';
 export { ProgressBar } from './ProgressBar';
 export { StarRating } from './StarRating';
 export { TreasureChest } from './TreasureChest';
+export { TreasureMapBg } from './TreasureMapBg';
 export { WorldCard } from './WorldCard';
