@@ -111,9 +111,9 @@ math-treasure-hunt/
 
 ### Prerequisites
 - Node.js 18+ installed
-- npm or yarn
-- Expo CLI: `npm install -g @expo/cli`
-- EAS CLI: `npm install -g eas-cli`
+- Yarn: `npm install -g yarn`
+- Expo CLI: `yarn global add @expo/cli`
+- EAS CLI: `yarn global add eas-cli`
 - Expo Go app on your phone (for development)
 
 ### Installation
@@ -124,16 +124,16 @@ git clone https://github.com/ashishpanchal/junior-math-quest.git
 cd junior-math-quest
 
 # Install dependencies
-npm install
+yarn install
 
 # Start development server
-npx expo start
+yarn start
 ```
 
 ### Running on Device
 
 1. Install **Expo Go** from App Store or Google Play
-2. Run `npx expo start`
+2. Run `yarn start`
 3. Scan the QR code with your phone camera (iOS) or Expo Go app (Android)
 
 ## 📱 EAS Build Setup
@@ -142,42 +142,42 @@ npx expo start
 
 ```bash
 # Login to Expo
-npx eas login
+eas login
 
 # Configure project for EAS Build
-npx eas build:configure
+eas build:configure
 ```
 
 ### iOS Build
 
 ```bash
 # Development build (for testing with Expo Dev Client)
-npx eas build --platform ios --profile development
+eas build --platform ios --profile development
 
 # Preview build (internal distribution)
-npx eas build --platform ios --profile preview
+eas build --platform ios --profile preview
 
 # Production build (App Store)
-npx eas build --platform ios --profile production
+eas build --platform ios --profile production
 ```
 
 ### Android Build
 
 ```bash
 # Development build
-npx eas build --platform android --profile development
+eas build --platform android --profile development
 
 # Preview build (APK for internal testing)
-npx eas build --platform android --profile preview
+eas build --platform android --profile preview
 
 # Production build (AAB for Google Play)
-npx eas build --platform android --profile production
+eas build --platform android --profile production
 ```
 
 ### Build Both Platforms
 
 ```bash
-npx eas build --platform all --profile production
+eas build --platform all --profile production
 ```
 
 ## 🎨 Customization
@@ -200,6 +200,20 @@ Place sound files in `assets/sounds/` and update `utils/sound.ts`:
 - `button.mp3` - Button press
 - `coin.mp3` - Coin collect
 - `background.mp3` - Background music (loop)
+
+## 🧶 Package Manager
+
+This project uses **Yarn** as its package manager. Please use `yarn` commands instead of `npm`:
+
+| Action | Command |
+|--------|---------|
+| Install dependencies | `yarn install` |
+| Start dev server | `yarn start` |
+| Run on iOS | `yarn ios` |
+| Run on Android | `yarn android` |
+| Build iOS (production) | `yarn build:ios` |
+| Build Android (production) | `yarn build:android` |
+| Build all platforms | `yarn build:all` |
 
 ## 🎯 Roadmap (v2)
 
