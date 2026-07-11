@@ -120,7 +120,7 @@ export const playBackgroundMusic = async (): Promise<void> => {
       {
         shouldPlay: true,
         isLooping: true,
-        volume: 0.2,
+        volume: 0.25,
       }
     );
 

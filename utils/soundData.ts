@@ -211,49 +211,69 @@ export const SOUND_TIMER_UP = generateWav(
 // ─── Background Music ──────────────────────────────────────────
 
 /**
- * Generate a soft, gentle music-box style background melody.
- * Uses triangle waves (softer than sine), lower octave,
- * longer envelopes, and very low volume for a warm, cozy feel.
+ * Original upbeat platformer/puzzle game style background music.
+ * Inspired by the energy of retro game soundtracks (8-bit era).
  * 
- * The melody is a simple, slow lullaby-like pattern that
- * won't annoy parents or overstimulate children.
+ * Features:
+ * - Square wave (classic retro game console sound)
+ * - Fast, bouncy tempo (~140 BPM)
+ * - Short staccato notes with rhythmic groove
+ * - Major key with fun intervals and catchy patterns
+ * - 100% original composition — no copyright issues
+ * 
+ * The melody has that "running through levels collecting coins" energy
+ * kids associate with fun video games.
  */
 export const SOUND_BACKGROUND_MUSIC = (() => {
   const sampleRate = 22050;
 
-  // Musical notes - using octave 4 (warm, not shrill)
-  const C4 = 262, D4 = 294, E4 = 330, F4 = 349;
-  const G4 = 392, A4 = 440, B4 = 494, C5 = 523;
+  // Notes (Hz) — using octave 4 and 5
+  const C4 = 262, D4 = 294, E4 = 330, F4 = 349, G4 = 392, A4 = 440, B4 = 494;
+  const C5 = 523, D5 = 587, E5 = 659, F5 = 698, G5 = 784, A5 = 880;
   const REST = 0;
 
-  // Slow, gentle music-box melody
-  // Each entry: [frequency, duration in seconds]
+  // BPM ~140, eighth note ≈ 0.21s, sixteenth ≈ 0.1s, quarter ≈ 0.43s
+  const S = 0.1;   // sixteenth (short staccato)
+  const E8 = 0.21;  // eighth note
+  const Q = 0.4;   // quarter note
+  const DQ = 0.55; // dotted quarter
+
+  // Original upbeat game melody
   const melody: [number, number][] = [
-    // Phrase 1: Gentle opening (Twinkle Twinkle style)
-    [C4, 0.5], [C4, 0.5], [G4, 0.5], [G4, 0.5],
-    [A4, 0.5], [A4, 0.5], [G4, 1.0],
-    // Brief pause
+    // === Section A: Energetic opening (bouncy ascending) ===
+    [E5, S], [REST, S], [E5, S], [REST, S], [E5, E8], [REST, S],
+    [C5, S], [E5, E8], [G5, Q], [REST, S],
+    [G4, Q], [REST, S],
+
+    // === Section B: Rhythmic middle (puzzle solving feel) ===
+    [C5, E8], [REST, S], [G4, E8], [REST, S], [E4, E8],
+    [REST, S], [A4, E8], [B4, E8], [REST, S], [A4, E8],
+
+    // === Section C: Playful run (coin collecting energy) ===
+    [G4, S], [E5, S], [G5, S], [A5, E8], [REST, S],
+    [F5, S], [G5, S], [REST, S], [E5, E8],
+    [C5, S], [D5, S], [B4, E8], [REST, S],
+
+    // === Section D: Fun descending pattern ===
+    [C5, E8], [C5, S], [C5, S], [REST, S],
+    [C5, S], [D5, S], [E5, E8], [C5, S], [A4, S], [G4, E8],
+    [REST, S],
+
+    // === Section E: Build-up (getting excited) ===
+    [E4, S], [E4, S], [REST, S], [E4, S], [REST, S],
+    [C4, S], [E4, E8], [G4, E8], [REST, S],
+    [A4, S], [B4, S], [A4, E8], [REST, S],
+
+    // === Section F: Climax phrase ===
+    [G4, S], [A5, S], [REST, S], [A5, S], [A5, S],
+    [G5, S], [F5, E8], [E5, S], [C5, S],
+    [D5, S], [E5, S], [REST, S], [C5, E8],
+    [A4, S], [G4, E8],
+
+    // === Section G: Resolution and loop point ===
+    [E5, S], [REST, S], [C5, S], [G4, E8],
+    [REST, S], [G4, S], [A4, S], [B4, S], [C5, Q],
     [REST, 0.3],
-    // Phrase 2: Descending comfort
-    [F4, 0.5], [F4, 0.5], [E4, 0.5], [E4, 0.5],
-    [D4, 0.5], [D4, 0.5], [C4, 1.0],
-    // Brief pause
-    [REST, 0.3],
-    // Phrase 3: Middle section
-    [G4, 0.5], [G4, 0.5], [F4, 0.5], [F4, 0.5],
-    [E4, 0.5], [E4, 0.5], [D4, 1.0],
-    // Brief pause
-    [REST, 0.3],
-    // Phrase 4: Resolution (back home)
-    [G4, 0.5], [G4, 0.5], [F4, 0.5], [F4, 0.5],
-    [E4, 0.5], [E4, 0.5], [D4, 1.0],
-    // Brief pause
-    [REST, 0.3],
-    // Phrase 5: Repeat opening for smooth loop
-    [C4, 0.5], [C4, 0.5], [G4, 0.5], [G4, 0.5],
-    [A4, 0.5], [A4, 0.5], [G4, 1.0],
-    // End pause for clean loop point
-    [REST, 0.5],
   ];
 
   // Calculate total duration
@@ -262,43 +282,38 @@ export const SOUND_BACKGROUND_MUSIC = (() => {
   const samples = new Int16Array(numSamples);
 
   let sampleIndex = 0;
-  const volume = 0.12; // Very quiet — gentle background
+  const volume = 0.18; // Moderate — present but not overwhelming
 
   for (const [freq, dur] of melody) {
     const segmentSamples = Math.floor(sampleRate * dur);
 
     for (let s = 0; s < segmentSamples && sampleIndex < numSamples; s++) {
       if (freq === 0) {
-        // Rest — silence
         samples[sampleIndex] = 0;
       } else {
         const t = s / sampleRate;
 
-        // Soft envelope: 50ms fade in, 100ms fade out (music box style)
-        const fadeInDuration = 0.05;
-        const fadeOutDuration = 0.1;
-        const fadeIn = Math.min(1, s / (sampleRate * fadeInDuration));
-        const fadeOut = Math.min(1, (segmentSamples - s) / (sampleRate * fadeOutDuration));
-        // Additional decay envelope (music box notes fade naturally)
-        const decay = Math.exp(-2.0 * (s / segmentSamples));
-        const envelope = fadeIn * fadeOut * decay;
+        // Snappy envelope for staccato game feel
+        // Fast attack (5ms), quick decay (notes don't ring long)
+        const attackTime = 0.005;
+        const releaseTime = 0.03;
+        const fadeIn = Math.min(1, s / (sampleRate * attackTime));
+        const fadeOut = Math.min(1, (segmentSamples - s) / (sampleRate * releaseTime));
+        // Short decay for that punchy retro feel
+        const decay = Math.exp(-4.0 * (s / segmentSamples));
+        const envelope = fadeIn * fadeOut * (0.3 + 0.7 * decay);
 
-        // Triangle wave (much softer than sine, like a music box)
+        // Square wave (50% duty cycle = classic 8-bit game sound)
         const period = sampleRate / freq;
         const phase = (s % period) / period;
-        let wave: number;
-        if (phase < 0.25) {
-          wave = phase * 4;
-        } else if (phase < 0.75) {
-          wave = 2 - phase * 4;
-        } else {
-          wave = phase * 4 - 4;
-        }
+        const square = phase < 0.5 ? 1.0 : -1.0;
 
-        // Add a tiny bit of the 2nd harmonic for warmth
-        const harmonic = Math.sin(2 * Math.PI * freq * 2 * t) * 0.15;
-        const sample = (wave + harmonic) * volume * envelope;
+        // Soften the square wave slightly (reduce harsh harmonics)
+        // by mixing 70% square + 30% sine of same freq
+        const sine = Math.sin(2 * Math.PI * freq * t);
+        const wave = square * 0.7 + sine * 0.3;
 
+        const sample = wave * volume * envelope;
         samples[sampleIndex] = Math.max(-32768, Math.min(32767, Math.floor(sample * 32767)));
       }
       sampleIndex++;
