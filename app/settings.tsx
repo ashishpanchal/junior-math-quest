@@ -4,7 +4,7 @@
 // ============================================================
 
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -20,12 +20,56 @@ import { useGameProgress } from '../hooks/useGameProgress';
 import { Difficulty } from '../types';
 import { BORDER_RADIUS, COLORS, FONTS, SHADOWS, SPACING } from '../constants/theme';
 
+/** Generate a random parent gate question (adult-level math) */
+const generateParentGateQuestion = () => {
+  const operations = ['+', '-', '×'] as const;
+  const op = operations[Math.floor(Math.random() * operations.length)];
+
+  let a: number, b: number, answer: number;
+
+  switch (op) {
+    case '+':
+      a = Math.floor(Math.random() * 40) + 12; // 12-51
+      b = Math.floor(Math.random() * 40) + 11; // 11-50
+      answer = a + b;
+      break;
+    case '-':
+      a = Math.floor(Math.random() * 50) + 30; // 30-79
+      b = Math.floor(Math.random() * 20) + 5;  // 5-24
+      answer = a - b;
+      break;
+    case '×':
+      a = Math.floor(Math.random() * 8) + 4;   // 4-11
+      b = Math.floor(Math.random() * 7) + 3;   // 3-9
+      answer = a * b;
+      break;
+  }
+
+  // Generate 2 wrong options close to the answer
+  const wrongOffsets = [-3, -2, -1, 1, 2, 3, 4, 5, -4, -5];
+  const shuffledOffsets = wrongOffsets.sort(() => Math.random() - 0.5);
+  const wrong1 = answer + shuffledOffsets[0];
+  let wrong2 = answer + shuffledOffsets[1];
+  // Ensure wrong2 != wrong1
+  if (wrong2 === wrong1) wrong2 = answer + shuffledOffsets[2];
+
+  // Shuffle options
+  const options = [answer, wrong1, wrong2].sort(() => Math.random() - 0.5);
+
+  const questionText = `${a} ${op} ${b} = ?`;
+
+  return { questionText, options, answer };
+};
+
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { progress, isLoading, updateGameSettings, handleReset } = useGameProgress();
   const [showParentGate, setShowParentGate] = useState(true);
   const [gateAnswer, setGateAnswer] = useState('');
+
+  // Generate a random question each time the gate is shown
+  const gateQuestion = useMemo(() => generateParentGateQuestion(), [showParentGate]);
 
   if (isLoading || !progress) {
     return (
@@ -35,7 +79,7 @@ export default function SettingsScreen() {
     );
   }
 
-  // Simple parent gate: solve a math problem
+  // Simple parent gate: solve a random math problem
   if (showParentGate) {
     return (
       <LinearGradient colors={['#FFF8E7', '#E8E8E8']} style={styles.container}>
@@ -47,14 +91,14 @@ export default function SettingsScreen() {
           <Text style={styles.gateSubtitle}>
             To access settings, please solve:
           </Text>
-          <Text style={styles.gateQuestion}>15 + 27 = ?</Text>
+          <Text style={styles.gateQuestion}>{gateQuestion.questionText}</Text>
           <View style={styles.gateOptions}>
-            {[38, 42, 45].map((opt) => (
+            {gateQuestion.options.map((opt) => (
               <Pressable
                 key={opt}
                 style={styles.gateOption}
                 onPress={() => {
-                  if (opt === 42) {
+                  if (opt === gateQuestion.answer) {
                     setShowParentGate(false);
                   }
                 }}
