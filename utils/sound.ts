@@ -1,10 +1,21 @@
 // ============================================================
-// Math Treasure Hunt - Sound Utility
-// Placeholder sound system using Expo AV
-// Replace placeholder files with actual sound files later
+// Math Treasure Hunt - Sound Utility (Working Implementation)
+// Plays synthesized fun sounds using Expo AV
 // ============================================================
 
-import { Audio } from 'expo-av';
+import { Audio, AVPlaybackSource } from 'expo-av';
+import {
+  SOUND_ACHIEVEMENT,
+  SOUND_BUTTON,
+  SOUND_COIN,
+  SOUND_CORRECT,
+  SOUND_LEVEL_COMPLETE,
+  SOUND_STAR,
+  SOUND_TIMER_UP,
+  SOUND_TIMER_WARN,
+  SOUND_TREASURE,
+  SOUND_WRONG,
+} from './soundData';
 
 /** Sound types available in the game */
 export type SoundType =
@@ -15,7 +26,9 @@ export type SoundType =
   | 'buttonPress'
   | 'coinCollect'
   | 'starEarn'
-  | 'achievement';
+  | 'achievement'
+  | 'timerWarn'
+  | 'timerUp';
 
 // Sound enabled state (controlled by parent settings)
 let soundEnabled = true;
@@ -31,26 +44,45 @@ export const setMusicEnabled = (enabled: boolean): void => {
   musicEnabled = enabled;
 };
 
+/** Map sound types to their data URIs */
+const SOUND_MAP: Record<SoundType, string> = {
+  correct: SOUND_CORRECT,
+  wrong: SOUND_WRONG,
+  levelComplete: SOUND_LEVEL_COMPLETE,
+  treasure: SOUND_TREASURE,
+  buttonPress: SOUND_BUTTON,
+  coinCollect: SOUND_COIN,
+  starEarn: SOUND_STAR,
+  achievement: SOUND_ACHIEVEMENT,
+  timerWarn: SOUND_TIMER_WARN,
+  timerUp: SOUND_TIMER_UP,
+};
+
 /**
- * Play a sound effect
- * NOTE: This is a placeholder implementation.
- * Add actual sound files to assets/sounds/ and update the paths below.
+ * Play a sound effect.
+ * Uses base64-encoded WAV data — no external files needed!
  */
 export const playSound = async (type: SoundType): Promise<void> => {
   if (!soundEnabled) return;
 
   try {
-    // Placeholder: In production, load actual sound files
-    // Example:
-    // const { sound } = await Audio.Sound.createAsync(
-    //   require('../assets/sounds/correct.mp3')
-    // );
-    // await sound.playAsync();
+    const uri = SOUND_MAP[type];
+    if (!uri) return;
 
-    // For now, we log the sound that would play
-    console.log(`[Sound] Playing: ${type}`);
+    const { sound } = await Audio.Sound.createAsync(
+      { uri } as AVPlaybackSource,
+      { shouldPlay: true, volume: 1.0 }
+    );
+
+    // Unload after playback to free memory
+    sound.setOnPlaybackStatusUpdate((status) => {
+      if (status.isLoaded && status.didJustFinish) {
+        sound.unloadAsync();
+      }
+    });
   } catch (error) {
-    console.error('Error playing sound:', error);
+    // Silently fail — sound is non-critical
+    console.warn('[Sound] Playback error:', type, error);
   }
 };
 
@@ -68,29 +100,16 @@ export const initAudio = async (): Promise<void> => {
 };
 
 /**
- * Play background music
- * NOTE: Placeholder - add actual music file
+ * Play background music (placeholder - add music file for full implementation)
  */
 export const playBackgroundMusic = async (): Promise<void> => {
   if (!musicEnabled) return;
-
-  try {
-    console.log('[Music] Playing background music');
-    // const { sound } = await Audio.Sound.createAsync(
-    //   require('../assets/sounds/background.mp3'),
-    //   { isLooping: true, volume: 0.3 }
-    // );
-    // await sound.playAsync();
-  } catch (error) {
-    console.error('Error playing background music:', error);
-  }
+  // Background music would require a longer audio file.
+  // For now this is a placeholder — add a looping .mp3 to assets/sounds/
+  // and load it here with { isLooping: true, volume: 0.2 }
 };
 
 /** Stop background music */
 export const stopBackgroundMusic = async (): Promise<void> => {
-  try {
-    console.log('[Music] Stopping background music');
-  } catch (error) {
-    console.error('Error stopping music:', error);
-  }
+  // Will be implemented when background music file is added
 };

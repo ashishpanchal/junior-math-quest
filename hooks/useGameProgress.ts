@@ -16,6 +16,8 @@ import {
   updateSettings,
 } from '../utils/storage';
 import { ACHIEVEMENTS, GAME_WORLDS } from '../constants/gameData';
+import { setSoundEnabled, setMusicEnabled } from '../utils/sound';
+import { setHapticsEnabled } from '../utils/haptics';
 
 export const useGameProgress = () => {
   const [progress, setProgress] = useState<GameProgress | null>(null);
@@ -26,10 +28,23 @@ export const useGameProgress = () => {
     const load = async () => {
       const data = await loadProgress();
       setProgress(data);
+      // Sync sound/haptics settings
+      setSoundEnabled(data.settings.soundEffectsEnabled);
+      setMusicEnabled(data.settings.musicEnabled);
+      setHapticsEnabled(data.settings.hapticsEnabled);
       setIsLoading(false);
     };
     load();
   }, []);
+
+  // Sync settings whenever progress changes
+  useEffect(() => {
+    if (progress) {
+      setSoundEnabled(progress.settings.soundEffectsEnabled);
+      setMusicEnabled(progress.settings.musicEnabled);
+      setHapticsEnabled(progress.settings.hapticsEnabled);
+    }
+  }, [progress?.settings]);
 
   /** Reload progress from storage */
   const reload = useCallback(async () => {

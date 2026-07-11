@@ -122,9 +122,16 @@ export const useGameEngine = ({
       setIsCorrect(false);
       setSelectedAnswer(null);
       errorHaptic();
-      playSound('wrong');
+      playSound('timerUp');
     }
   }, [timer.isExpired, isAnswered, timerEnabled]);
+
+  // Play warning beep when timer hits 3 seconds
+  useEffect(() => {
+    if (timerEnabled && timer.isRunning && timer.remaining === 3) {
+      playSound('timerWarn');
+    }
+  }, [timer.remaining, timer.isRunning, timerEnabled]);
 
   // Cleanup on unmount
   useEffect(() => {
