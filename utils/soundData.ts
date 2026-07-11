@@ -211,52 +211,128 @@ export const SOUND_TIMER_UP = generateWav(
 // ─── Background Music ──────────────────────────────────────────
 
 /**
- * Generate a cheerful kids background melody.
- * A happy, simple tune in C major that loops nicely.
- * Uses softer volume so it sits behind gameplay sounds.
- *
- * The melody is based on a playful nursery-rhyme style pattern:
- * C-D-E-C | E-F-G | G-A-G-F-E-C | D-E-D-C
- * Repeated twice with slight variation for ~8 seconds total loop.
+ * Generate a soft, gentle music-box style background melody.
+ * Uses triangle waves (softer than sine), lower octave,
+ * longer envelopes, and very low volume for a warm, cozy feel.
+ * 
+ * The melody is a simple, slow lullaby-like pattern that
+ * won't annoy parents or overstimulate children.
  */
 export const SOUND_BACKGROUND_MUSIC = (() => {
-  // Musical notes as frequencies (octave 4 and 5)
-  const C4 = 262, D4 = 294, E4 = 330, F4 = 349, G4 = 392, A4 = 440, B4 = 494;
-  const C5 = 523, D5 = 587, E5 = 659, F5 = 698, G5 = 784;
+  const sampleRate = 22050;
 
-  // A happy, bouncy melody kids would enjoy
-  // Each note is [frequency, duration in seconds]
+  // Musical notes - using octave 4 (warm, not shrill)
+  const C4 = 262, D4 = 294, E4 = 330, F4 = 349;
+  const G4 = 392, A4 = 440, B4 = 494, C5 = 523;
+  const REST = 0;
+
+  // Slow, gentle music-box melody
+  // Each entry: [frequency, duration in seconds]
   const melody: [number, number][] = [
-    // Phrase 1: playful ascending
-    [C5, 0.22], [D5, 0.22], [E5, 0.22], [C5, 0.22],
-    [E5, 0.22], [F5, 0.22], [G5, 0.44],
-    // Phrase 2: gentle descent
-    [G5, 0.18], [A4, 0.18], [G5, 0.18], [F5, 0.18], [E5, 0.22], [C5, 0.35],
-    // Phrase 3: bouncy resolution
-    [D5, 0.22], [E5, 0.22], [D5, 0.22], [C5, 0.44],
-    // Small rest (very quiet tone)
-    [0, 0.3],
-    // Phrase 4: variation - higher energy
-    [E5, 0.18], [E5, 0.18], [F5, 0.22], [G5, 0.22],
-    [G5, 0.18], [F5, 0.18], [E5, 0.18], [D5, 0.35],
-    // Phrase 5: happy ending
-    [C5, 0.22], [E5, 0.22], [G5, 0.22], [C5, 0.44],
-    // Phrase 6: gentle bridge
-    [G4, 0.22], [A4, 0.22], [B4, 0.22], [C5, 0.44],
-    [E5, 0.18], [D5, 0.18], [C5, 0.35],
-    // Small rest
-    [0, 0.25],
-    // Phrase 7: repeat first theme with variation
-    [C5, 0.18], [E5, 0.18], [G5, 0.18], [E5, 0.18],
-    [D5, 0.22], [F5, 0.22], [E5, 0.35],
-    // Phrase 8: final resolution
-    [G5, 0.22], [F5, 0.18], [E5, 0.18], [D5, 0.18], [C5, 0.5],
-    // End rest for smooth loop
-    [0, 0.3],
+    // Phrase 1: Gentle opening (Twinkle Twinkle style)
+    [C4, 0.5], [C4, 0.5], [G4, 0.5], [G4, 0.5],
+    [A4, 0.5], [A4, 0.5], [G4, 1.0],
+    // Brief pause
+    [REST, 0.3],
+    // Phrase 2: Descending comfort
+    [F4, 0.5], [F4, 0.5], [E4, 0.5], [E4, 0.5],
+    [D4, 0.5], [D4, 0.5], [C4, 1.0],
+    // Brief pause
+    [REST, 0.3],
+    // Phrase 3: Middle section
+    [G4, 0.5], [G4, 0.5], [F4, 0.5], [F4, 0.5],
+    [E4, 0.5], [E4, 0.5], [D4, 1.0],
+    // Brief pause
+    [REST, 0.3],
+    // Phrase 4: Resolution (back home)
+    [G4, 0.5], [G4, 0.5], [F4, 0.5], [F4, 0.5],
+    [E4, 0.5], [E4, 0.5], [D4, 1.0],
+    // Brief pause
+    [REST, 0.3],
+    // Phrase 5: Repeat opening for smooth loop
+    [C4, 0.5], [C4, 0.5], [G4, 0.5], [G4, 0.5],
+    [A4, 0.5], [A4, 0.5], [G4, 1.0],
+    // End pause for clean loop point
+    [REST, 0.5],
   ];
 
-  const frequencies = melody.map(([f]) => f);
-  const durations = melody.map(([, d]) => d);
+  // Calculate total duration
+  const totalDuration = melody.reduce((sum, [, d]) => sum + d, 0);
+  const numSamples = Math.floor(sampleRate * totalDuration);
+  const samples = new Int16Array(numSamples);
 
-  return generateWav(frequencies, durations, 0.25, 22050);
+  let sampleIndex = 0;
+  const volume = 0.12; // Very quiet — gentle background
+
+  for (const [freq, dur] of melody) {
+    const segmentSamples = Math.floor(sampleRate * dur);
+
+    for (let s = 0; s < segmentSamples && sampleIndex < numSamples; s++) {
+      if (freq === 0) {
+        // Rest — silence
+        samples[sampleIndex] = 0;
+      } else {
+        const t = s / sampleRate;
+
+        // Soft envelope: 50ms fade in, 100ms fade out (music box style)
+        const fadeInDuration = 0.05;
+        const fadeOutDuration = 0.1;
+        const fadeIn = Math.min(1, s / (sampleRate * fadeInDuration));
+        const fadeOut = Math.min(1, (segmentSamples - s) / (sampleRate * fadeOutDuration));
+        // Additional decay envelope (music box notes fade naturally)
+        const decay = Math.exp(-2.0 * (s / segmentSamples));
+        const envelope = fadeIn * fadeOut * decay;
+
+        // Triangle wave (much softer than sine, like a music box)
+        const period = sampleRate / freq;
+        const phase = (s % period) / period;
+        let wave: number;
+        if (phase < 0.25) {
+          wave = phase * 4;
+        } else if (phase < 0.75) {
+          wave = 2 - phase * 4;
+        } else {
+          wave = phase * 4 - 4;
+        }
+
+        // Add a tiny bit of the 2nd harmonic for warmth
+        const harmonic = Math.sin(2 * Math.PI * freq * 2 * t) * 0.15;
+        const sample = (wave + harmonic) * volume * envelope;
+
+        samples[sampleIndex] = Math.max(-32768, Math.min(32767, Math.floor(sample * 32767)));
+      }
+      sampleIndex++;
+    }
+  }
+
+  // Build WAV file
+  const dataSize = numSamples * 2;
+  const fileSize = 44 + dataSize;
+  const buffer = new ArrayBuffer(fileSize);
+  const view = new DataView(buffer);
+
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, fileSize - 8, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, dataSize, true);
+
+  for (let i = 0; i < numSamples; i++) {
+    view.setInt16(44 + i * 2, samples[i], true);
+  }
+
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return `data:audio/wav;base64,${btoa(binary)}`;
 })();
