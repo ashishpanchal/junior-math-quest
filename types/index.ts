@@ -123,6 +123,10 @@ export interface GameSettings {
   voiceEnabled: boolean;
   hapticsEnabled: boolean;
   difficulty: Difficulty;
+  /** Timer duration per question in seconds (default: 10) */
+  timerSeconds: number;
+  /** Whether timer is enabled */
+  timerEnabled: boolean;
 }
 
 /** Progress data saved to AsyncStorage */

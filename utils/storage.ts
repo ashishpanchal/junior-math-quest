@@ -26,6 +26,8 @@ const DEFAULT_SETTINGS: GameSettings = {
   voiceEnabled: true,
   hapticsEnabled: true,
   difficulty: 'easy',
+  timerSeconds: 10,
+  timerEnabled: true,
 };
 
 /** Default game progress */

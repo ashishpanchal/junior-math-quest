@@ -20,6 +20,10 @@ interface UseGameEngineProps {
   worldId: WorldId;
   levelId: number;
   difficulty: Difficulty;
+  /** Timer duration in seconds (from parent settings) */
+  timerSeconds: number;
+  /** Whether the timer is enabled */
+  timerEnabled: boolean;
   onComplete: (result: LevelResult) => void;
 }
 
@@ -27,6 +31,8 @@ export const useGameEngine = ({
   worldId,
   levelId,
   difficulty,
+  timerSeconds = 10,
+  timerEnabled = true,
   onComplete,
 }: UseGameEngineProps) => {
   // Generate questions for this level
@@ -96,8 +102,8 @@ export const useGameEngine = ({
 
   // Start timer when question changes or on first mount
   useEffect(() => {
-    if (currentQuestion && !isAnswered) {
-      const timeLimit = currentQuestion.timeLimit ?? 10;
+    if (currentQuestion && !isAnswered && timerEnabled) {
+      const timeLimit = timerSeconds;
       startTimer(timeLimit);
     }
     return () => {
@@ -106,11 +112,11 @@ export const useGameEngine = ({
         intervalRef.current = null;
       }
     };
-  }, [currentIndex, startTimer]);
+  }, [currentIndex, startTimer, timerEnabled, timerSeconds]);
 
   // Handle timer expiry (auto-reveal as wrong)
   useEffect(() => {
-    if (timer.isExpired && !isAnswered) {
+    if (timerEnabled && timer.isExpired && !isAnswered) {
       // Time ran out — treat as wrong answer without selecting anything
       setIsAnswered(true);
       setIsCorrect(false);
@@ -118,7 +124,7 @@ export const useGameEngine = ({
       errorHaptic();
       playSound('wrong');
     }
-  }, [timer.isExpired, isAnswered]);
+  }, [timer.isExpired, isAnswered, timerEnabled]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -219,9 +225,10 @@ export const useGameEngine = ({
     setIsAnswered(false);
     setSelectedAnswer(null);
     setIsCorrect(false);
-    const timeLimit = currentQuestion?.timeLimit ?? 10;
-    startTimer(timeLimit);
-  }, [startTimer, currentQuestion]);
+    if (timerEnabled) {
+      startTimer(timerSeconds);
+    }
+  }, [startTimer, timerSeconds, timerEnabled]);
 
   return {
     // Question state

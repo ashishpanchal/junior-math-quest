@@ -145,10 +145,14 @@ export default function GameScreen() {
   const levelId = parseInt(params.levelId || '1', 10);
   const difficulty = (params.difficulty || 'easy') as Difficulty;
 
-  const { handleLevelComplete } = useGameProgress();
+  const { handleLevelComplete, progress } = useGameProgress();
   const [feedbackMsg, setFeedbackMsg] = useState('');
   const [coinsEarned, setCoinsEarned] = useState(0);
   const [showMiniConfetti, setShowMiniConfetti] = useState(false);
+
+  // Get timer settings from parent config
+  const timerSeconds = progress?.settings?.timerSeconds ?? 10;
+  const timerEnabled = progress?.settings?.timerEnabled ?? true;
 
   const handleComplete = useCallback(
     (result: LevelResult) => {
@@ -180,7 +184,7 @@ export default function GameScreen() {
     handleAnswer,
     handleNext,
     handleRetry,
-  } = useGameEngine({ worldId, levelId, difficulty, onComplete: handleComplete });
+  } = useGameEngine({ worldId, levelId, difficulty, timerSeconds, timerEnabled, onComplete: handleComplete });
 
   const world = GAME_WORLDS.find((w) => w.id === worldId);
 
@@ -237,13 +241,15 @@ export default function GameScreen() {
 
         {/* Timer + Character row */}
         <View style={styles.timerCharacterRow}>
-          {/* Countdown Timer */}
-          <CountdownTimer
-            remaining={timer.remaining}
-            total={currentQuestion.timeLimit}
-            isRunning={timer.isRunning}
-            isExpired={timer.isExpired}
-          />
+          {/* Countdown Timer (only if enabled) */}
+          {timerEnabled && (
+            <CountdownTimer
+              remaining={timer.remaining}
+              total={timerSeconds}
+              isRunning={timer.isRunning}
+              isExpired={timer.isExpired}
+            />
+          )}
 
           {/* Character with speech bubble */}
           <View style={styles.characterSection}>
@@ -316,7 +322,7 @@ export default function GameScreen() {
                 isSelected={selectedAnswer === option}
                 isCorrect={option === currentQuestion.correctAnswer}
                 isRevealed={isAnswered}
-                disabled={isAnswered || timer.isExpired}
+                disabled={isAnswered || (timerEnabled && timer.isExpired)}
                 index={index}
               />
             ))}
@@ -324,7 +330,7 @@ export default function GameScreen() {
         </View>
 
         {/* Bottom action */}
-        {(isAnswered || timer.isExpired) && (
+        {(isAnswered || (timerEnabled && timer.isExpired)) && (
           <Animated.View entering={FadeInUp.duration(300)} style={styles.actionContainer}>
             {isCorrect ? (
               <Pressable onPress={handleNext} style={styles.actionButton}>
