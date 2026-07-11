@@ -1,291 +1,374 @@
 // ============================================================
-// Math Treasure Hunt - Math Question Generator
-// Generates age-appropriate math questions for children
+// Math Treasure Hunt - Math Question Generator (Rewritten)
+// Age 6-8 appropriate questions with 7 types
+// Rules: no negative answers, randomised options, 1 correct answer
 // ============================================================
 
-import { Difficulty, MathQuestion, QuestionType } from '../types';
+import { Difficulty, DifficultyConfig, MathQuestion, QuestionType } from '../types';
 import { DIFFICULTY_CONFIG } from '../constants/gameData';
 
-/** Generate a unique ID */
-const generateId = (): string => Math.random().toString(36).substring(2, 9);
+// ─── Utility Helpers ─────────────────────────────────────────
 
-/** Get a random integer between min and max (inclusive) */
-const randomInt = (min: number, max: number): number =>
+/** Generate a short unique ID */
+const uid = (): string => Math.random().toString(36).substring(2, 9);
+
+/** Random integer between min and max (inclusive) */
+const randInt = (min: number, max: number): number =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 
-/** Shuffle an array */
-const shuffle = <T>(array: T[]): T[] => {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
+/** Pick a random element from an array */
+const pick = <T>(arr: readonly T[]): T => arr[randInt(0, arr.length - 1)];
+
+/** Fisher-Yates shuffle (returns new array) */
+const shuffle = <T>(arr: T[]): T[] => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return arr;
+  return a;
 };
 
-/** Generate wrong answers that are close to the correct answer */
-const generateWrongOptions = (
-  correctAnswer: number,
+/**
+ * Generate distractor (wrong) answers close to the correct one.
+ * Ensures no duplicates, no negatives, and keeps values in [min, max].
+ */
+const generateDistractors = (
+  correct: number,
   count: number,
   min: number,
   max: number
 ): number[] => {
-  const wrongs: Set<number> = new Set();
+  const distractors = new Set<number>();
 
-  // Try to generate answers close to the correct one first
-  const nearbyValues = [
-    correctAnswer + 1,
-    correctAnswer - 1,
-    correctAnswer + 2,
-    correctAnswer - 2,
-    correctAnswer + 3,
-    correctAnswer - 3,
-  ].filter((v) => v >= min && v <= max && v !== correctAnswer);
-
-  // Shuffle and pick from nearby
-  const shuffled = shuffle(nearbyValues);
-  for (const val of shuffled) {
-    if (wrongs.size >= count) break;
-    wrongs.add(val);
+  // Prefer nearby values for plausible wrong answers
+  const offsets = [1, -1, 2, -2, 3, -3, 5, -5, 4, -4, 10, -10];
+  for (const offset of offsets) {
+    if (distractors.size >= count) break;
+    const val = correct + offset;
+    if (val >= min && val <= max && val !== correct) {
+      distractors.add(val);
+    }
   }
 
-  // Fill remaining with random values
+  // Fill remaining with random values if needed
   let attempts = 0;
-  while (wrongs.size < count && attempts < 50) {
-    const val = randomInt(min, max);
-    if (val !== correctAnswer && !wrongs.has(val)) {
-      wrongs.add(val);
+  while (distractors.size < count && attempts < 100) {
+    const val = randInt(min, max);
+    if (val !== correct && !distractors.has(val)) {
+      distractors.add(val);
     }
     attempts++;
   }
 
-  return Array.from(wrongs).slice(0, count);
+  return Array.from(distractors).slice(0, count);
 };
 
-/** Generate an addition question: a + b = ? */
-const generateAddition = (maxNumber: number, optionsCount: number): MathQuestion => {
-  const a = randomInt(1, Math.floor(maxNumber / 2));
-  const b = randomInt(1, maxNumber - a);
-  const correctAnswer = a + b;
+/**
+ * Build the final options array: 1 correct + distractors, shuffled.
+ */
+const buildOptions = (
+  correct: number,
+  optionsCount: number,
+  min: number,
+  max: number
+): number[] => {
+  const distractors = generateDistractors(correct, optionsCount - 1, min, max);
+  return shuffle([correct, ...distractors]);
+};
 
-  const wrongs = generateWrongOptions(correctAnswer, optionsCount - 1, 1, maxNumber);
-  const options = shuffle([correctAnswer, ...wrongs]);
+// ─── Question Generators ─────────────────────────────────────
+
+/** Addition: a + b = ? (result stays within maxNumber) */
+const generateAddition = (config: DifficultyConfig): MathQuestion => {
+  const { minNumber, maxNumber, optionsCount, timeLimitSeconds } = config;
+  // Pick two numbers whose sum doesn't exceed maxNumber
+  const a = randInt(minNumber, Math.floor(maxNumber * 0.6));
+  const b = randInt(1, Math.min(maxNumber - a, Math.floor(maxNumber * 0.5)));
+  const correct = a + b;
 
   return {
-    id: generateId(),
+    id: uid(),
     type: 'addition',
     question: `${a} + ${b} = ?`,
-    options,
-    correctAnswer,
-    difficulty: maxNumber <= 10 ? 'easy' : 'medium',
+    options: buildOptions(correct, optionsCount, minNumber, maxNumber),
+    correctAnswer: correct,
+    difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+    timeLimit: timeLimitSeconds,
   };
 };
 
-/** Generate a subtraction question: a - b = ? (no negative results) */
-const generateSubtraction = (maxNumber: number, optionsCount: number): MathQuestion => {
-  const a = randomInt(2, maxNumber);
-  const b = randomInt(1, a - 1); // Ensure no negative result
-  const correctAnswer = a - b;
-
-  const wrongs = generateWrongOptions(correctAnswer, optionsCount - 1, 0, maxNumber);
-  const options = shuffle([correctAnswer, ...wrongs]);
+/** Subtraction: a - b = ? (no negative results, result >= 0) */
+const generateSubtraction = (config: DifficultyConfig): MathQuestion => {
+  const { minNumber, maxNumber, optionsCount, timeLimitSeconds } = config;
+  // Ensure a > b so result is positive
+  const a = randInt(Math.max(minNumber, 10), maxNumber);
+  const b = randInt(1, a - 1);
+  const correct = a - b;
 
   return {
-    id: generateId(),
+    id: uid(),
     type: 'subtraction',
     question: `${a} - ${b} = ?`,
-    options,
-    correctAnswer,
-    difficulty: maxNumber <= 10 ? 'easy' : 'medium',
+    options: buildOptions(correct, optionsCount, 0, maxNumber),
+    correctAnswer: correct,
+    difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+    timeLimit: timeLimitSeconds,
   };
 };
 
-/** Generate a counting question with emoji visuals */
-const generateCounting = (maxNumber: number, optionsCount: number): MathQuestion => {
-  const emojis = ['⭐', '🍎', '🌺', '🐟', '🦋', '🎈', '💎', '🍪', '🌸', '🐝'];
-  const emoji = emojis[randomInt(0, emojis.length - 1)];
-  const count = randomInt(1, Math.min(maxNumber, 10));
+/** Counting objects: show emojis, count how many */
+const generateCounting = (config: DifficultyConfig): MathQuestion => {
+  const { optionsCount, timeLimitSeconds } = config;
+  const items = ['⭐', '🍎', '🌺', '🐟', '🦋', '🎈', '💎', '🍪', '🌸', '🐝', '🍓', '🧁'];
+  const emoji = pick(items);
+  // Counting stays reasonable (3-12 items visible)
+  const count = randInt(3, 12);
   const visual = emoji.repeat(count);
 
-  const wrongs = generateWrongOptions(count, optionsCount - 1, 1, Math.min(maxNumber, 12));
-  const options = shuffle([count, ...wrongs]);
-
   return {
-    id: generateId(),
+    id: uid(),
     type: 'counting',
-    question: `Count the items:`,
+    question: 'Count the items:',
     visual,
-    options,
+    options: buildOptions(count, optionsCount, 1, 15),
     correctAnswer: count,
-    difficulty: maxNumber <= 10 ? 'easy' : 'medium',
+    difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+    timeLimit: timeLimitSeconds,
   };
 };
 
-/** Generate a comparison question: which is bigger? */
-const generateComparison = (maxNumber: number, optionsCount: number): MathQuestion => {
-  const a = randomInt(1, maxNumber);
-  let b = randomInt(1, maxNumber);
-  while (b === a) {
-    b = randomInt(1, maxNumber);
-  }
+/** Comparison: which number is bigger / smaller? */
+const generateComparison = (config: DifficultyConfig): MathQuestion => {
+  const { minNumber, maxNumber, optionsCount, timeLimitSeconds } = config;
+  const a = randInt(minNumber, maxNumber);
+  let b = randInt(minNumber, maxNumber);
+  // Ensure a ≠ b
+  while (b === a) b = randInt(minNumber, maxNumber);
 
-  const correctAnswer = Math.max(a, b);
+  // Randomly ask bigger or smaller
+  const askBigger = Math.random() > 0.5;
+  const correct = askBigger ? Math.max(a, b) : Math.min(a, b);
+  const keyword = askBigger ? 'bigger' : 'smaller';
 
-  // For comparison, options are the two numbers plus distractors
-  const wrongs = generateWrongOptions(correctAnswer, optionsCount - 1, 1, maxNumber);
-  // Always include both compared numbers in the options
-  const otherOptions = wrongs.filter((w) => w !== a && w !== b).slice(0, optionsCount - 2);
-  const options = shuffle([a, b, ...otherOptions].slice(0, optionsCount));
+  // Options should include both numbers + distractors
+  let opts = [a, b];
+  const extra = generateDistractors(correct, optionsCount - 2, minNumber, maxNumber)
+    .filter((v) => v !== a && v !== b);
+  opts = [...opts, ...extra].slice(0, optionsCount);
 
-  // Make sure correct answer is in options
-  if (!options.includes(correctAnswer)) {
-    options[0] = correctAnswer;
+  // Ensure correct is in options
+  if (!opts.includes(correct)) {
+    opts[opts.length - 1] = correct;
   }
 
   return {
-    id: generateId(),
+    id: uid(),
     type: 'comparison',
-    question: `Which number is bigger?\n${a} or ${b}`,
-    options: shuffle(options),
-    correctAnswer,
-    difficulty: maxNumber <= 10 ? 'easy' : 'medium',
+    question: `Which number is ${keyword}?\n${a}  or  ${b}`,
+    options: shuffle(opts),
+    correctAnswer: correct,
+    difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+    timeLimit: timeLimitSeconds,
   };
 };
 
-/** Generate a missing number question: what comes after/before? */
-const generateMissingNumber = (maxNumber: number, optionsCount: number): MathQuestion => {
+/** Missing number: what comes before / after / between? */
+const generateMissingNumber = (config: DifficultyConfig): MathQuestion => {
+  const { minNumber, maxNumber, optionsCount, timeLimitSeconds } = config;
   const patterns = ['after', 'before', 'between'] as const;
-  const pattern = patterns[randomInt(0, maxNumber <= 10 ? 1 : 2)];
+  const pattern = pick(patterns);
 
   let question: string;
-  let correctAnswer: number;
+  let correct: number;
 
   switch (pattern) {
     case 'after': {
-      const num = randomInt(1, maxNumber - 1);
+      const num = randInt(minNumber, maxNumber - 1);
       question = `What number comes after ${num}?`;
-      correctAnswer = num + 1;
+      correct = num + 1;
       break;
     }
     case 'before': {
-      const num = randomInt(2, maxNumber);
+      const num = randInt(minNumber + 1, maxNumber);
       question = `What number comes before ${num}?`;
-      correctAnswer = num - 1;
+      correct = num - 1;
       break;
     }
     case 'between': {
-      const num = randomInt(2, maxNumber - 1);
+      const num = randInt(minNumber + 1, maxNumber - 1);
       question = `What number is between ${num - 1} and ${num + 1}?`;
-      correctAnswer = num;
+      correct = num;
       break;
     }
   }
 
-  const wrongs = generateWrongOptions(correctAnswer, optionsCount - 1, 1, maxNumber);
-  const options = shuffle([correctAnswer, ...wrongs]);
-
   return {
-    id: generateId(),
+    id: uid(),
     type: 'missing_number',
     question,
-    options,
-    correctAnswer,
-    difficulty: maxNumber <= 10 ? 'easy' : 'medium',
+    options: buildOptions(correct, optionsCount, Math.max(0, correct - 5), correct + 5),
+    correctAnswer: correct,
+    difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+    timeLimit: timeLimitSeconds,
   };
 };
 
-/** Generate a shape counting question */
-const generateShapeCounting = (maxNumber: number, optionsCount: number): MathQuestion => {
+/** Number sequence: find the next number in a pattern */
+const generateNumberSequence = (config: DifficultyConfig): MathQuestion => {
+  const { minNumber, maxNumber, optionsCount, timeLimitSeconds } = config;
+
+  // Sequence patterns: +step, -step, or alternating
+  const step = randInt(2, 5);
+  const isIncreasing = Math.random() > 0.3; // Mostly increasing for kids
+  const start = isIncreasing
+    ? randInt(minNumber, Math.max(minNumber, maxNumber - step * 5))
+    : randInt(minNumber + step * 4, maxNumber);
+
+  // Generate 4 terms and ask for the 5th
+  const terms: number[] = [];
+  for (let i = 0; i < 4; i++) {
+    terms.push(start + (isIncreasing ? step * i : -step * i));
+  }
+  const correct = start + (isIncreasing ? step * 4 : -step * 4);
+
+  // Ensure no negative answer
+  if (correct < 0) {
+    // Fallback to simple increasing
+    const safeStart = randInt(minNumber, maxNumber - step * 5);
+    const safeTerms = Array.from({ length: 4 }, (_, i) => safeStart + step * i);
+    const safeCorrect = safeStart + step * 4;
+
+    return {
+      id: uid(),
+      type: 'number_sequence',
+      question: `What comes next?\n${safeTerms.join(', ')}, ?`,
+      options: buildOptions(safeCorrect, optionsCount, safeCorrect - 10, safeCorrect + 10),
+      correctAnswer: safeCorrect,
+      difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+      timeLimit: timeLimitSeconds,
+    };
+  }
+
+  return {
+    id: uid(),
+    type: 'number_sequence',
+    question: `What comes next?\n${terms.join(', ')}, ?`,
+    options: buildOptions(correct, optionsCount, Math.max(0, correct - 10), correct + 10),
+    correctAnswer: correct,
+    difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+    timeLimit: timeLimitSeconds,
+  };
+};
+
+/** Shape counting: count specific shapes among mixed shapes */
+const generateShapeCounting = (config: DifficultyConfig): MathQuestion => {
+  const { optionsCount, timeLimitSeconds } = config;
+
   const shapes = [
     { emoji: '🔴', name: 'red circles' },
     { emoji: '🟡', name: 'yellow circles' },
     { emoji: '🔵', name: 'blue circles' },
     { emoji: '🟢', name: 'green circles' },
-    { emoji: '⬜', name: 'white squares' },
+    { emoji: '🟣', name: 'purple circles' },
     { emoji: '🔷', name: 'blue diamonds' },
     { emoji: '🔶', name: 'orange diamonds' },
+    { emoji: '⬜', name: 'white squares' },
+    { emoji: '🟧', name: 'orange squares' },
     { emoji: '💜', name: 'purple hearts' },
+    { emoji: '💚', name: 'green hearts' },
+    { emoji: '⭐', name: 'stars' },
   ];
 
-  const shape = shapes[randomInt(0, shapes.length - 1)];
-  const count = randomInt(2, Math.min(maxNumber, 8));
-  const visual = shape.emoji.repeat(count);
+  // Pick target shape and distractor shapes
+  const targetShape = pick(shapes);
+  const otherShapes = shapes.filter((s) => s.emoji !== targetShape.emoji);
+  const distractor1 = pick(otherShapes);
+  const distractor2 = pick(otherShapes.filter((s) => s.emoji !== distractor1.emoji));
 
-  const wrongs = generateWrongOptions(count, optionsCount - 1, 1, Math.min(maxNumber, 10));
-  const options = shuffle([count, ...wrongs]);
+  // Generate mixed visual
+  const targetCount = randInt(3, 8);
+  const distractor1Count = randInt(2, 5);
+  const distractor2Count = randInt(1, 4);
+
+  // Build visual string with mixed shapes then shuffle characters
+  const allItems = [
+    ...Array(targetCount).fill(targetShape.emoji),
+    ...Array(distractor1Count).fill(distractor1.emoji),
+    ...Array(distractor2Count).fill(distractor2.emoji),
+  ];
+  const visual = shuffle(allItems).join('');
 
   return {
-    id: generateId(),
+    id: uid(),
     type: 'shape_counting',
-    question: `How many ${shape.name} do you see?`,
+    question: `How many ${targetShape.name} do you see?`,
     visual,
-    options,
-    correctAnswer: count,
-    difficulty: maxNumber <= 10 ? 'easy' : 'medium',
+    options: buildOptions(targetCount, optionsCount, 1, targetCount + 5),
+    correctAnswer: targetCount,
+    difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+    timeLimit: timeLimitSeconds,
   };
 };
 
-/** Get available question types based on difficulty */
-const getQuestionTypes = (difficulty: Difficulty): QuestionType[] => {
-  switch (difficulty) {
-    case 'easy':
-      return ['addition', 'subtraction', 'counting', 'comparison'];
-    case 'medium':
-      return ['addition', 'subtraction', 'counting', 'comparison', 'missing_number'];
-    case 'hard':
-      return [
-        'addition',
-        'subtraction',
-        'counting',
-        'comparison',
-        'missing_number',
-        'shape_counting',
-      ];
-  }
+// ─── Question Dispatcher ─────────────────────────────────────
+
+/** Map question type to its generator function */
+const GENERATORS: Record<QuestionType, (config: DifficultyConfig) => MathQuestion> = {
+  addition: generateAddition,
+  subtraction: generateSubtraction,
+  counting: generateCounting,
+  comparison: generateComparison,
+  missing_number: generateMissingNumber,
+  number_sequence: generateNumberSequence,
+  shape_counting: generateShapeCounting,
 };
 
+// ─── Public API ──────────────────────────────────────────────
+
 /**
- * Generate a set of questions for a level
+ * Generate a set of questions for a level.
+ * Ensures variety by cycling through available types.
+ *
  * @param difficulty - The difficulty setting
- * @param count - Override number of questions (uses difficulty default if not specified)
+ * @param count - Override number of questions (uses config default if omitted)
+ * @returns Array of MathQuestion objects ready for gameplay
  */
 export const generateQuestions = (
   difficulty: Difficulty,
   count?: number
 ): MathQuestion[] => {
   const config = DIFFICULTY_CONFIG[difficulty];
-  const numQuestions = count || config.questionsPerLevel;
-  const { maxNumber, optionsCount } = config;
-  const types = getQuestionTypes(difficulty);
+  const numQuestions = count ?? config.questionsPerLevel;
+  const types = config.questionTypes;
   const questions: MathQuestion[] = [];
 
+  // Ensure each type appears at least once before repeating (variety)
+  const shuffledTypes = shuffle([...types]);
+  let typeIndex = 0;
+
   for (let i = 0; i < numQuestions; i++) {
-    const type = types[randomInt(0, types.length - 1)];
-    let question: MathQuestion;
+    // Cycle through shuffled types for variety
+    const type = shuffledTypes[typeIndex % shuffledTypes.length];
+    typeIndex++;
 
-    switch (type) {
-      case 'addition':
-        question = generateAddition(maxNumber, optionsCount);
-        break;
-      case 'subtraction':
-        question = generateSubtraction(maxNumber, optionsCount);
-        break;
-      case 'counting':
-        question = generateCounting(maxNumber, optionsCount);
-        break;
-      case 'comparison':
-        question = generateComparison(maxNumber, optionsCount);
-        break;
-      case 'missing_number':
-        question = generateMissingNumber(maxNumber, optionsCount);
-        break;
-      case 'shape_counting':
-        question = generateShapeCounting(maxNumber, optionsCount);
-        break;
-    }
-
+    const generator = GENERATORS[type];
+    const question = generator(config);
     questions.push(question);
   }
 
   return questions;
+};
+
+/**
+ * Generate a single question of a specific type.
+ * Useful for practice modes or testing.
+ */
+export const generateSingleQuestion = (
+  type: QuestionType,
+  difficulty: Difficulty
+): MathQuestion => {
+  const config = DIFFICULTY_CONFIG[difficulty];
+  const generator = GENERATORS[type];
+  return generator(config);
 };

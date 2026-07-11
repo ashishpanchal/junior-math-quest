@@ -1,29 +1,65 @@
 // ============================================================
-// Math Treasure Hunt - Type Definitions
+// Math Treasure Hunt - Type Definitions (Updated)
+// Supports 7 question types, timer, and age 6-8 ranges
 // ============================================================
 
 /** Difficulty levels available in the game */
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
-/** Types of math questions */
+/** All supported math question types */
 export type QuestionType =
   | 'addition'
   | 'subtraction'
   | 'counting'
   | 'comparison'
   | 'missing_number'
+  | 'number_sequence'
   | 'shape_counting';
 
 /** A single math question */
 export interface MathQuestion {
   id: string;
   type: QuestionType;
+  /** The question text displayed to the child */
   question: string;
-  /** Visual representation (emoji-based) */
+  /** Optional visual representation (emoji-based, e.g. "⭐⭐⭐") */
   visual?: string;
+  /** Answer options (3 or 4 numbers, randomised order) */
   options: number[];
+  /** The single correct answer */
   correctAnswer: number;
+  /** Difficulty this question was generated for */
   difficulty: Difficulty;
+  /** Time limit in seconds for this question */
+  timeLimit: number;
+}
+
+/** Difficulty configuration defining number ranges and rules */
+export interface DifficultyConfig {
+  /** Number of questions in a level */
+  questionsPerLevel: number;
+  /** Minimum number used in calculations */
+  minNumber: number;
+  /** Maximum number used in calculations */
+  maxNumber: number;
+  /** Number of answer options (3 or 4) */
+  optionsCount: 3 | 4;
+  /** Whether the timer is active */
+  hasTimer: boolean;
+  /** Time limit per question in seconds */
+  timeLimitSeconds: number;
+  /** Which question types are available at this difficulty */
+  questionTypes: QuestionType[];
+}
+
+/** Timer state for the game engine */
+export interface TimerState {
+  /** Seconds remaining */
+  remaining: number;
+  /** Whether the timer is currently running */
+  isRunning: boolean;
+  /** Whether time ran out */
+  isExpired: boolean;
 }
 
 /** World IDs */
@@ -44,7 +80,7 @@ export interface GameWorld {
   color: string;
   gradientColors: [string, string];
   levelsCount: number;
-  requiredStars: number; // Stars needed to unlock
+  requiredStars: number;
 }
 
 /** A single level within a world */
@@ -54,7 +90,7 @@ export interface GameLevel {
   difficulty: Difficulty;
   questionsCount: number;
   isCompleted: boolean;
-  stars: number; // 0-3 stars earned
+  stars: number;
   isLocked: boolean;
 }
 
@@ -94,9 +130,9 @@ export interface GameProgress {
   profile: PlayerProfile;
   settings: GameSettings;
   completedLevels: Record<WorldId, number[]>;
-  levelStars: Record<string, number>; // key: `${worldId}-${levelId}`
+  levelStars: Record<string, number>;
   unlockedWorlds: WorldId[];
-  achievements: string[]; // IDs of unlocked achievements
+  achievements: string[];
   coins: number;
   totalStars: number;
 }
@@ -107,6 +143,10 @@ export interface AnswerResult {
   selectedAnswer: number;
   correctAnswer: number;
   questionIndex: number;
+  /** Whether the answer was given before time expired */
+  answeredInTime: boolean;
+  /** Seconds remaining when answered */
+  timeRemaining: number;
 }
 
 /** Level completion result */
@@ -115,10 +155,12 @@ export interface LevelResult {
   levelId: number;
   totalQuestions: number;
   correctAnswers: number;
-  stars: number; // 0-3
+  stars: number;
   coinsEarned: number;
-  timeSpent: number; // in seconds
+  timeSpent: number;
   isNewBest: boolean;
+  /** Bonus coins earned from fast answers */
+  timerBonus: number;
 }
 
 /** Navigation params for game screen */

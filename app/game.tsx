@@ -1,16 +1,22 @@
 // ============================================================
-// Math Treasure Hunt - Game Screen (Polished)
-// Core gameplay with improved question cards, responsive layout
+// Math Treasure Hunt - Game Screen (with Countdown Timer)
+// Core gameplay with 10-second timer, question cards, responsive layout
 // ============================================================
 
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
+  Easing,
   FadeIn,
   FadeInDown,
   FadeInUp,
   SlideInRight,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,6 +31,107 @@ import { useGameProgress } from '../hooks/useGameProgress';
 import { CORRECT_MESSAGES, WRONG_MESSAGES, GAME_WORLDS } from '../constants/gameData';
 import { BORDER_RADIUS, COLORS, FONTS, SHADOWS, SPACING, responsive } from '../constants/theme';
 import { Difficulty, LevelResult, WorldId } from '../types';
+
+// ─── Countdown Timer Component ──────────────────────────────────
+
+interface CountdownTimerProps {
+  remaining: number;
+  total: number;
+  isRunning: boolean;
+  isExpired: boolean;
+}
+
+const CountdownTimer: React.FC<CountdownTimerProps> = ({
+  remaining,
+  total,
+  isRunning,
+  isExpired,
+}) => {
+  const pulseScale = useSharedValue(1);
+  const shakeX = useSharedValue(0);
+
+  // Pulse when time is low (<=3 seconds)
+  useEffect(() => {
+    if (isRunning && remaining <= 3 && remaining > 0) {
+      pulseScale.value = withRepeat(
+        withSequence(
+          withTiming(1.15, { duration: 200, easing: Easing.out(Easing.quad) }),
+          withTiming(1.0, { duration: 200 })
+        ),
+        -1,
+        true
+      );
+    } else {
+      pulseScale.value = withTiming(1, { duration: 150 });
+    }
+  }, [remaining, isRunning]);
+
+  // Shake when expired
+  useEffect(() => {
+    if (isExpired) {
+      shakeX.value = withSequence(
+        withTiming(-6, { duration: 50 }),
+        withTiming(6, { duration: 50 }),
+        withTiming(-4, { duration: 50 }),
+        withTiming(4, { duration: 50 }),
+        withTiming(0, { duration: 50 })
+      );
+    }
+  }, [isExpired]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: pulseScale.value },
+      { translateX: shakeX.value },
+    ],
+  }));
+
+  // Color transitions: green → yellow → red
+  const getTimerColor = (): string => {
+    if (isExpired) return COLORS.error;
+    if (remaining <= 3) return COLORS.error;
+    if (remaining <= 5) return COLORS.warning;
+    return COLORS.success;
+  };
+
+  const getTrackColor = (): string => {
+    if (isExpired) return COLORS.errorLight;
+    if (remaining <= 3) return COLORS.errorLight;
+    if (remaining <= 5) return COLORS.warningLight;
+    return COLORS.successLight;
+  };
+
+  const progress = total > 0 ? remaining / total : 0;
+
+  return (
+    <Animated.View style={[styles.timerContainer, animatedStyle]}>
+      {/* Circular progress ring */}
+      <View style={[styles.timerRing, { borderColor: getTrackColor() }]}>
+        <View
+          style={[
+            styles.timerFill,
+            {
+              backgroundColor: getTimerColor(),
+              height: `${progress * 100}%`,
+            },
+          ]}
+        />
+        <View style={styles.timerInner}>
+          <Text style={[styles.timerText, { color: getTimerColor() }]}>
+            {isExpired ? '⏰' : remaining}
+          </Text>
+        </View>
+      </View>
+
+      {/* Label */}
+      <Text style={[styles.timerLabel, { color: getTimerColor() }]}>
+        {isExpired ? "Time's up!" : remaining <= 3 ? 'Hurry!' : 'sec'}
+      </Text>
+    </Animated.View>
+  );
+};
+
+// ─── Main Game Screen ────────────────────────────────────────────
 
 export default function GameScreen() {
   const insets = useSafeAreaInsets();
@@ -69,6 +176,7 @@ export default function GameScreen() {
     isAnswered,
     selectedAnswer,
     isCorrect,
+    timer,
     handleAnswer,
     handleNext,
     handleRetry,
@@ -127,15 +235,40 @@ export default function GameScreen() {
           <CoinDisplay coins={coinsEarned} size="small" showPlus />
         </View>
 
-        {/* Character with speech bubble */}
-        <View style={styles.characterSection}>
-          <AnimatedCharacter
-            emoji={world.emoji}
-            mood={isAnswered ? (isCorrect ? 'happy' : 'encouraging') : 'thinking'}
-            size={responsive.font(55)}
-            message={isAnswered ? feedbackMsg : undefined}
-            showPlatform={false}
+        {/* Timer + Character row */}
+        <View style={styles.timerCharacterRow}>
+          {/* Countdown Timer */}
+          <CountdownTimer
+            remaining={timer.remaining}
+            total={currentQuestion.timeLimit}
+            isRunning={timer.isRunning}
+            isExpired={timer.isExpired}
           />
+
+          {/* Character with speech bubble */}
+          <View style={styles.characterSection}>
+            <AnimatedCharacter
+              emoji={world.emoji}
+              mood={
+                timer.isExpired
+                  ? 'encouraging'
+                  : isAnswered
+                  ? isCorrect
+                    ? 'happy'
+                    : 'encouraging'
+                  : 'thinking'
+              }
+              size={responsive.font(50)}
+              message={
+                timer.isExpired && !isAnswered
+                  ? "Time's up! ⏰"
+                  : isAnswered
+                  ? feedbackMsg
+                  : undefined
+              }
+              showPlatform={false}
+            />
+          </View>
         </View>
 
         {/* Question card */}
@@ -155,7 +288,8 @@ export default function GameScreen() {
                  currentQuestion.type === 'subtraction' ? '➖' :
                  currentQuestion.type === 'counting' ? '🔢' :
                  currentQuestion.type === 'comparison' ? '⚖️' :
-                 currentQuestion.type === 'missing_number' ? '❓' : '🔷'}
+                 currentQuestion.type === 'missing_number' ? '❓' :
+                 currentQuestion.type === 'number_sequence' ? '🔢' : '🔷'}
               </Text>
             </View>
 
@@ -182,7 +316,7 @@ export default function GameScreen() {
                 isSelected={selectedAnswer === option}
                 isCorrect={option === currentQuestion.correctAnswer}
                 isRevealed={isAnswered}
-                disabled={isAnswered}
+                disabled={isAnswered || timer.isExpired}
                 index={index}
               />
             ))}
@@ -190,7 +324,7 @@ export default function GameScreen() {
         </View>
 
         {/* Bottom action */}
-        {isAnswered && (
+        {(isAnswered || timer.isExpired) && (
           <Animated.View entering={FadeInUp.duration(300)} style={styles.actionContainer}>
             {isCorrect ? (
               <Pressable onPress={handleNext} style={styles.actionButton}>
@@ -250,8 +384,51 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.xs, color: COLORS.textSecondary,
     textAlign: 'center', marginTop: 3, fontWeight: FONTS.weights.semibold,
   },
+  // Timer + Character row
+  timerCharacterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.sm,
+    gap: SPACING.md,
+  },
+  // Timer
+  timerContainer: {
+    alignItems: 'center',
+    gap: 2,
+  },
+  timerRing: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    backgroundColor: '#F8F9FA',
+  },
+  timerFill: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderRadius: 24,
+    opacity: 0.2,
+  },
+  timerInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timerText: {
+    fontSize: responsive.font(20),
+    fontWeight: FONTS.weights.extrabold,
+  },
+  timerLabel: {
+    fontSize: FONTS.sizes.xs,
+    fontWeight: FONTS.weights.bold,
+  },
   // Character
-  characterSection: { alignItems: 'center', marginBottom: SPACING.sm, minHeight: 80 },
+  characterSection: { alignItems: 'center', flex: 1 },
   // Question card
   questionCard: {
     borderRadius: BORDER_RADIUS.xl, marginBottom: SPACING.md,
@@ -278,7 +455,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
     borderRadius: BORDER_RADIUS.lg,
   },
-  visualText: { fontSize: responsive.font(32), letterSpacing: 6, textAlign: 'center' },
+  visualText: { fontSize: responsive.font(28), letterSpacing: 4, textAlign: 'center' },
   // Answers
   answersContainer: { flex: 1, justifyContent: 'center' },
   answersGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },

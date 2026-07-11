@@ -1,12 +1,18 @@
 // ============================================================
-// Math Treasure Hunt - Game Engine Hook
-// Manages the core game loop: questions, answers, scoring
+// Math Treasure Hunt - Game Engine Hook (Updated)
+// Manages game loop with 10-second countdown timer per question
 // ============================================================
 
-import { useCallback, useMemo, useState } from 'react';
-import { Difficulty, LevelResult, MathQuestion, WorldId } from '../types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Difficulty, LevelResult, MathQuestion, TimerState, WorldId } from '../types';
 import { generateQuestions } from '../utils/questionGenerator';
-import { COINS_PER_CORRECT, PERFECT_LEVEL_BONUS, STAR_THRESHOLDS } from '../constants/gameData';
+import {
+  COINS_PER_CORRECT,
+  PERFECT_LEVEL_BONUS,
+  STAR_THRESHOLDS,
+  TIMER_BONUS_COINS,
+  TIMER_BONUS_THRESHOLD,
+} from '../constants/gameData';
 import { playSound } from '../utils/sound';
 import { errorHaptic, successHaptic } from '../utils/haptics';
 
@@ -32,6 +38,16 @@ export const useGameEngine = ({
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState(false);
   const [startTime] = useState(Date.now());
+  const [timerBonusTotal, setTimerBonusTotal] = useState(0);
+
+  // ─── Timer State ─────────────────────────────────────────────
+  const [timer, setTimer] = useState<TimerState>({
+    remaining: 10,
+    isRunning: false,
+    isExpired: false,
+  });
+
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /** Current question */
   const currentQuestion: MathQuestion | undefined = questions[currentIndex];
@@ -42,6 +58,72 @@ export const useGameEngine = ({
   /** Is this the last question? */
   const isLastQuestion = currentIndex >= questions.length - 1;
 
+  // ─── Timer Logic ─────────────────────────────────────────────
+
+  /** Start the countdown timer for current question */
+  const startTimer = useCallback(() => {
+    const timeLimit = currentQuestion?.timeLimit ?? 10;
+    setTimer({ remaining: timeLimit, isRunning: true, isExpired: false });
+
+    // Clear any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    intervalRef.current = setInterval(() => {
+      setTimer((prev) => {
+        if (prev.remaining <= 1) {
+          // Time's up
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          return { remaining: 0, isRunning: false, isExpired: true };
+        }
+        return { ...prev, remaining: prev.remaining - 1 };
+      });
+    }, 1000);
+  }, [currentQuestion]);
+
+  /** Stop the timer */
+  const stopTimer = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setTimer((prev) => ({ ...prev, isRunning: false }));
+  }, []);
+
+  // Start timer when question changes
+  useEffect(() => {
+    if (currentQuestion && !isAnswered) {
+      startTimer();
+    }
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [currentIndex, currentQuestion]);
+
+  // Handle timer expiry (auto-reveal as wrong)
+  useEffect(() => {
+    if (timer.isExpired && !isAnswered) {
+      // Time ran out — treat as wrong answer without selecting anything
+      setIsAnswered(true);
+      setIsCorrect(false);
+      setSelectedAnswer(null);
+      errorHaptic();
+      playSound('wrong');
+    }
+  }, [timer.isExpired, isAnswered]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  // ─── Scoring ─────────────────────────────────────────────────
+
   /** Calculate stars based on correct percentage */
   const calculateStars = (correct: number, total: number): number => {
     const ratio = total > 0 ? correct / total : 0;
@@ -51,10 +133,15 @@ export const useGameEngine = ({
     return 0;
   };
 
+  // ─── Actions ─────────────────────────────────────────────────
+
   /** Handle player selecting an answer */
   const handleAnswer = useCallback(
     async (answer: number) => {
-      if (isAnswered) return;
+      if (isAnswered || timer.isExpired) return;
+
+      // Stop the timer
+      stopTimer();
 
       const correct = answer === currentQuestion?.correctAnswer;
       setSelectedAnswer(answer);
@@ -63,6 +150,12 @@ export const useGameEngine = ({
 
       if (correct) {
         setCorrectCount((prev) => prev + 1);
+
+        // Timer bonus: award extra coins if answered fast
+        if (timer.remaining >= TIMER_BONUS_THRESHOLD) {
+          setTimerBonusTotal((prev) => prev + TIMER_BONUS_COINS);
+        }
+
         await successHaptic();
         await playSound('correct');
       } else {
@@ -70,51 +163,62 @@ export const useGameEngine = ({
         await playSound('wrong');
       }
     },
-    [isAnswered, currentQuestion]
+    [isAnswered, timer.isExpired, timer.remaining, currentQuestion, stopTimer]
   );
 
   /** Move to next question or finish level */
   const handleNext = useCallback(() => {
     if (isLastQuestion) {
-      // Level complete
-      const finalCorrect = correctCount + (isCorrect ? 0 : 0); // Already counted
+      // Level complete — calculate final score
       const totalQuestions = questions.length;
-      const stars = calculateStars(finalCorrect + (isCorrect && !isAnswered ? 1 : 0), totalQuestions);
-      const coinsEarned =
-        finalCorrect * COINS_PER_CORRECT +
-        (finalCorrect === totalQuestions ? PERFECT_LEVEL_BONUS : 0);
+      const stars = calculateStars(correctCount, totalQuestions);
+      const baseCoins = correctCount * COINS_PER_CORRECT;
+      const perfectBonus = correctCount === totalQuestions ? PERFECT_LEVEL_BONUS : 0;
+      const coinsEarned = baseCoins + perfectBonus + timerBonusTotal;
       const timeSpent = Math.floor((Date.now() - startTime) / 1000);
 
       const result: LevelResult = {
         worldId,
         levelId,
         totalQuestions,
-        correctAnswers: finalCorrect,
+        correctAnswers: correctCount,
         stars,
         coinsEarned,
         timeSpent,
-        isNewBest: true, // Will be compared in progress
+        isNewBest: true,
+        timerBonus: timerBonusTotal,
       };
 
       playSound('levelComplete');
       onComplete(result);
     } else {
-      // Next question
+      // Move to next question — timer restarts via useEffect
       setCurrentIndex((prev) => prev + 1);
       setIsAnswered(false);
       setSelectedAnswer(null);
       setIsCorrect(false);
     }
-  }, [isLastQuestion, correctCount, isCorrect, questions.length, startTime, worldId, levelId, onComplete, isAnswered]);
+  }, [
+    isLastQuestion,
+    correctCount,
+    questions.length,
+    startTime,
+    worldId,
+    levelId,
+    onComplete,
+    timerBonusTotal,
+  ]);
 
-  /** Retry the wrong answer (allow unlimited retries) */
+  /** Retry the wrong answer (unlimited retries, restarts timer) */
   const handleRetry = useCallback(() => {
     setIsAnswered(false);
     setSelectedAnswer(null);
     setIsCorrect(false);
-  }, []);
+    startTimer();
+  }, [startTimer]);
 
   return {
+    // Question state
     currentQuestion,
     currentIndex,
     totalQuestions: questions.length,
@@ -124,6 +228,11 @@ export const useGameEngine = ({
     isCorrect,
     progressPercent,
     isLastQuestion,
+
+    // Timer state
+    timer,
+
+    // Actions
     handleAnswer,
     handleNext,
     handleRetry,

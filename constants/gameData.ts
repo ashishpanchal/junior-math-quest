@@ -2,7 +2,7 @@
 // Math Treasure Hunt - Game Data Constants
 // ============================================================
 
-import { Achievement, Difficulty, GameWorld, WorldId } from '../types';
+import { Achievement, Difficulty, DifficultyConfig, GameWorld, WorldId } from '../types';
 
 /** All game worlds with their configuration */
 export const GAME_WORLDS: GameWorld[] = [
@@ -68,30 +68,61 @@ export const GAME_WORLDS: GameWorld[] = [
   },
 ];
 
-/** Difficulty configuration */
-export const DIFFICULTY_CONFIG: Record<
-  Difficulty,
-  { questionsPerLevel: number; maxNumber: number; optionsCount: number; hasTimer: boolean }
-> = {
+/** Difficulty configuration for ages 6-8 */
+export const DIFFICULTY_CONFIG: Record<Difficulty, DifficultyConfig> = {
   easy: {
     questionsPerLevel: 5,
-    maxNumber: 10,
+    minNumber: 20,
+    maxNumber: 50,
     optionsCount: 3,
-    hasTimer: false,
+    hasTimer: true,
+    timeLimitSeconds: 10,
+    questionTypes: [
+      'addition',
+      'subtraction',
+      'counting',
+      'comparison',
+      'missing_number',
+    ],
   },
   medium: {
     questionsPerLevel: 8,
-    maxNumber: 20,
+    minNumber: 50,
+    maxNumber: 99,
     optionsCount: 4,
-    hasTimer: false,
+    hasTimer: true,
+    timeLimitSeconds: 10,
+    questionTypes: [
+      'addition',
+      'subtraction',
+      'counting',
+      'comparison',
+      'missing_number',
+      'number_sequence',
+    ],
   },
   hard: {
     questionsPerLevel: 10,
-    maxNumber: 20,
+    minNumber: 20,
+    maxNumber: 99,
     optionsCount: 4,
-    hasTimer: true, // Bonus timer only, no penalty
+    hasTimer: true,
+    timeLimitSeconds: 10,
+    questionTypes: [
+      'addition',
+      'subtraction',
+      'counting',
+      'comparison',
+      'missing_number',
+      'number_sequence',
+      'shape_counting',
+    ],
   },
 };
+
+/** Timer bonus coins for fast answers (answered with time remaining) */
+export const TIMER_BONUS_THRESHOLD = 5; // seconds remaining to earn bonus
+export const TIMER_BONUS_COINS = 3; // extra coins per fast answer
 
 /** Achievement definitions */
 export const ACHIEVEMENTS: Achievement[] = [
