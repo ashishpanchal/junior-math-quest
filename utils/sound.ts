@@ -6,7 +6,6 @@
 import { Audio, AVPlaybackSource } from 'expo-av';
 import {
   SOUND_ACHIEVEMENT,
-  SOUND_BACKGROUND_MUSIC,
   SOUND_BUTTON,
   SOUND_COIN,
   SOUND_CORRECT,
@@ -35,22 +34,15 @@ export type SoundType =
 
 let soundEnabled = true;
 let musicEnabled = true;
-let bgMusicInstance: Audio.Sound | null = null;
-let bgMusicIsPlaying = false;
 
 /** Set sound effects enabled state */
 export const setSoundEnabled = (enabled: boolean): void => {
   soundEnabled = enabled;
 };
 
-/** Set music enabled state and start/stop music accordingly */
+/** Set music enabled state */
 export const setMusicEnabled = (enabled: boolean): void => {
   musicEnabled = enabled;
-  if (!enabled) {
-    stopBackgroundMusic();
-  } else if (enabled && !bgMusicIsPlaying) {
-    playBackgroundMusic();
-  }
 };
 
 // ─── Sound Effects ─────────────────────────────────────────────
@@ -100,98 +92,39 @@ export const playSound = async (type: SoundType): Promise<void> => {
 // ─── Background Music ──────────────────────────────────────────
 
 /**
- * Play cheerful background music in a loop.
- * Volume is kept low (0.3) so it doesn't overpower game sounds.
- * Call this on the home screen or game start.
+ * Play background music (disabled for now - will add proper audio file later)
  */
 export const playBackgroundMusic = async (): Promise<void> => {
-  if (!musicEnabled) return;
-  if (bgMusicIsPlaying) return; // Already playing
-
-  try {
-    // Unload any previous instance
-    if (bgMusicInstance) {
-      await bgMusicInstance.unloadAsync();
-      bgMusicInstance = null;
-    }
-
-    const { sound } = await Audio.Sound.createAsync(
-      { uri: SOUND_BACKGROUND_MUSIC } as AVPlaybackSource,
-      {
-        shouldPlay: true,
-        isLooping: true,
-        volume: 0.25,
-      }
-    );
-
-    bgMusicInstance = sound;
-    bgMusicIsPlaying = true;
-
-    // Handle unexpected stops
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if (status.isLoaded && !status.isPlaying && !status.isBuffering) {
-        // Music stopped unexpectedly
-        bgMusicIsPlaying = false;
-      }
-    });
-  } catch (error) {
-    console.warn('[Music] Background music error:', error);
-    bgMusicIsPlaying = false;
-  }
+  // Background music temporarily disabled.
+  // To add proper music later, place an .mp3 file in assets/sounds/
+  // and load it here with { isLooping: true, volume: 0.25 }
 };
 
 /**
- * Stop background music and unload from memory.
+ * Stop background music.
  */
 export const stopBackgroundMusic = async (): Promise<void> => {
-  try {
-    if (bgMusicInstance) {
-      await bgMusicInstance.stopAsync();
-      await bgMusicInstance.unloadAsync();
-      bgMusicInstance = null;
-    }
-    bgMusicIsPlaying = false;
-  } catch (error) {
-    console.warn('[Music] Stop error:', error);
-    bgMusicIsPlaying = false;
-  }
+  // No-op while music is disabled
 };
 
 /**
- * Pause background music (e.g., when app goes to background).
+ * Pause background music.
  */
 export const pauseBackgroundMusic = async (): Promise<void> => {
-  try {
-    if (bgMusicInstance && bgMusicIsPlaying) {
-      await bgMusicInstance.pauseAsync();
-    }
-  } catch (error) {
-    console.warn('[Music] Pause error:', error);
-  }
+  // No-op while music is disabled
 };
 
 /**
  * Resume background music after pause.
  */
 export const resumeBackgroundMusic = async (): Promise<void> => {
-  if (!musicEnabled) return;
-  try {
-    if (bgMusicInstance) {
-      await bgMusicInstance.playAsync();
-      bgMusicIsPlaying = true;
-    } else {
-      // Instance was lost, restart
-      await playBackgroundMusic();
-    }
-  } catch (error) {
-    console.warn('[Music] Resume error:', error);
-  }
+  // No-op while music is disabled
 };
 
 /**
  * Check if background music is currently playing.
  */
-export const isMusicPlaying = (): boolean => bgMusicIsPlaying;
+export const isMusicPlaying = (): boolean => false;
 
 // ─── Initialization ────────────────────────────────────────────
 
