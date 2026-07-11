@@ -91,6 +91,7 @@ const WorldCardEnhanced: React.FC<WorldCardEnhancedProps> = ({
   return (
     <Animated.View
       entering={FadeInUp.delay(200 + index * 100).duration(500).springify()}
+      style={styles.worldCardWrapper}
     >
       <AnimatedPressable
         onPress={handlePress}
@@ -306,10 +307,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: SPACING.md,
+  },
+  worldCardWrapper: {
+    width: '48%',
+    marginBottom: SPACING.md,
   },
   worldCard: {
-    width: responsive.wp(42),
+    width: '100%',
     aspectRatio: 0.95,
     borderRadius: BORDER_RADIUS.xl,
     ...SHADOWS.large,
