@@ -5,14 +5,32 @@
 
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
-import { Platform } from 'react-native';
-import { initAudio } from '../utils/sound';
+import React, { useEffect, useRef } from 'react';
+import { AppState, AppStateStatus, Platform } from 'react-native';
+import { initAudio, pauseBackgroundMusic, resumeBackgroundMusic } from '../utils/sound';
 import { COLORS } from '../constants/theme';
 
 export default function RootLayout() {
+  const appState = useRef(AppState.currentState);
+
   useEffect(() => {
     initAudio();
+
+    // Pause/resume background music when app goes to background/foreground
+    const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (appState.current.match(/active/) && nextState.match(/inactive|background/)) {
+        // App going to background — pause music
+        pauseBackgroundMusic();
+      } else if (appState.current.match(/inactive|background/) && nextState === 'active') {
+        // App coming to foreground — resume music
+        resumeBackgroundMusic();
+      }
+      appState.current = nextState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   return (

@@ -207,3 +207,56 @@ export const SOUND_TIMER_UP = generateWav(
   [0.1, 0.1, 0.15],
   0.4
 );
+
+// ─── Background Music ──────────────────────────────────────────
+
+/**
+ * Generate a cheerful kids background melody.
+ * A happy, simple tune in C major that loops nicely.
+ * Uses softer volume so it sits behind gameplay sounds.
+ *
+ * The melody is based on a playful nursery-rhyme style pattern:
+ * C-D-E-C | E-F-G | G-A-G-F-E-C | D-E-D-C
+ * Repeated twice with slight variation for ~8 seconds total loop.
+ */
+export const SOUND_BACKGROUND_MUSIC = (() => {
+  // Musical notes as frequencies (octave 4 and 5)
+  const C4 = 262, D4 = 294, E4 = 330, F4 = 349, G4 = 392, A4 = 440, B4 = 494;
+  const C5 = 523, D5 = 587, E5 = 659, F5 = 698, G5 = 784;
+
+  // A happy, bouncy melody kids would enjoy
+  // Each note is [frequency, duration in seconds]
+  const melody: [number, number][] = [
+    // Phrase 1: playful ascending
+    [C5, 0.22], [D5, 0.22], [E5, 0.22], [C5, 0.22],
+    [E5, 0.22], [F5, 0.22], [G5, 0.44],
+    // Phrase 2: gentle descent
+    [G5, 0.18], [A4, 0.18], [G5, 0.18], [F5, 0.18], [E5, 0.22], [C5, 0.35],
+    // Phrase 3: bouncy resolution
+    [D5, 0.22], [E5, 0.22], [D5, 0.22], [C5, 0.44],
+    // Small rest (very quiet tone)
+    [0, 0.3],
+    // Phrase 4: variation - higher energy
+    [E5, 0.18], [E5, 0.18], [F5, 0.22], [G5, 0.22],
+    [G5, 0.18], [F5, 0.18], [E5, 0.18], [D5, 0.35],
+    // Phrase 5: happy ending
+    [C5, 0.22], [E5, 0.22], [G5, 0.22], [C5, 0.44],
+    // Phrase 6: gentle bridge
+    [G4, 0.22], [A4, 0.22], [B4, 0.22], [C5, 0.44],
+    [E5, 0.18], [D5, 0.18], [C5, 0.35],
+    // Small rest
+    [0, 0.25],
+    // Phrase 7: repeat first theme with variation
+    [C5, 0.18], [E5, 0.18], [G5, 0.18], [E5, 0.18],
+    [D5, 0.22], [F5, 0.22], [E5, 0.35],
+    // Phrase 8: final resolution
+    [G5, 0.22], [F5, 0.18], [E5, 0.18], [D5, 0.18], [C5, 0.5],
+    // End rest for smooth loop
+    [0, 0.3],
+  ];
+
+  const frequencies = melody.map(([f]) => f);
+  const durations = melody.map(([, d]) => d);
+
+  return generateWav(frequencies, durations, 0.25, 22050);
+})();

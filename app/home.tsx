@@ -25,6 +25,7 @@ import { CoinDisplay } from '../components/CoinDisplay';
 import { GameButton } from '../components/GameButton';
 import { TreasureChest } from '../components/TreasureChest';
 import { useGameProgress } from '../hooks/useGameProgress';
+import { playBackgroundMusic, isMusicPlaying } from '../utils/sound';
 import { BORDER_RADIUS, COLORS, FONTS, SHADOWS, SPACING, responsive } from '../constants/theme';
 
 const { width } = Dimensions.get('window');
@@ -41,6 +42,11 @@ export default function HomeScreen() {
   const mapPulse = useSharedValue(1);
 
   useEffect(() => {
+    // Start background music when home screen loads
+    if (!isMusicPlaying()) {
+      playBackgroundMusic();
+    }
+
     // Character bounces in
     characterScale.value = withDelay(200, withSpring(1, { damping: 6, stiffness: 120 }));
     characterY.value = withDelay(200, withSpring(0, { damping: 8 }));
