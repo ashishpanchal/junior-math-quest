@@ -60,27 +60,30 @@ export const useGameEngine = ({
 
   // ─── Timer Logic ─────────────────────────────────────────────
 
-  /** Start the countdown timer for current question */
-  const startTimer = useCallback(() => {
-    const timeLimit = currentQuestion?.timeLimit ?? 10;
-    setTimer({ remaining: timeLimit, isRunning: true, isExpired: false });
-
-    // Clear any existing interval
+  /** Start the countdown timer for a given time limit */
+  const startTimer = useCallback((timeLimit: number = 10) => {
+    // Clear any existing interval first
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
+
+    setTimer({ remaining: timeLimit, isRunning: true, isExpired: false });
 
     intervalRef.current = setInterval(() => {
       setTimer((prev) => {
         if (prev.remaining <= 1) {
           // Time's up
-          if (intervalRef.current) clearInterval(intervalRef.current);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
           return { remaining: 0, isRunning: false, isExpired: true };
         }
         return { ...prev, remaining: prev.remaining - 1 };
       });
     }, 1000);
-  }, [currentQuestion]);
+  }, []);
 
   /** Stop the timer */
   const stopTimer = useCallback(() => {
@@ -91,17 +94,19 @@ export const useGameEngine = ({
     setTimer((prev) => ({ ...prev, isRunning: false }));
   }, []);
 
-  // Start timer when question changes
+  // Start timer when question changes or on first mount
   useEffect(() => {
     if (currentQuestion && !isAnswered) {
-      startTimer();
+      const timeLimit = currentQuestion.timeLimit ?? 10;
+      startTimer(timeLimit);
     }
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-  }, [currentIndex, currentQuestion]);
+  }, [currentIndex, startTimer]);
 
   // Handle timer expiry (auto-reveal as wrong)
   useEffect(() => {
@@ -214,8 +219,9 @@ export const useGameEngine = ({
     setIsAnswered(false);
     setSelectedAnswer(null);
     setIsCorrect(false);
-    startTimer();
-  }, [startTimer]);
+    const timeLimit = currentQuestion?.timeLimit ?? 10;
+    startTimer(timeLimit);
+  }, [startTimer, currentQuestion]);
 
   return {
     // Question state
