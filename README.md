@@ -23,10 +23,10 @@ A fun and colorful mobile math game for children aged 5-8 years old. Kids go on 
 ### Difficulty Levels
 | | Easy | Medium | Hard |
 |---|---|---|---|
-| Numbers | 1-10 | 1-20 | 1-20 |
+| Numbers | 1-20 | 21-50 | 50-99 |
 | Options | 3 | 4 | 4 |
 | Questions | 5 per level | 8 per level | 10 per level |
-| Timer | No | No | Bonus only |
+| Timer | Configurable (default 10s) | Configurable (default 10s) | Configurable (default 10s) |
 
 ### Rewards System
 - ⭐ Stars (1-3 per level)

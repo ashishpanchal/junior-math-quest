@@ -72,8 +72,8 @@ export const GAME_WORLDS: GameWorld[] = [
 export const DIFFICULTY_CONFIG: Record<Difficulty, DifficultyConfig> = {
   easy: {
     questionsPerLevel: 5,
-    minNumber: 20,
-    maxNumber: 50,
+    minNumber: 1,
+    maxNumber: 20,
     optionsCount: 3,
     hasTimer: true,
     timeLimitSeconds: 10,
@@ -87,8 +87,8 @@ export const DIFFICULTY_CONFIG: Record<Difficulty, DifficultyConfig> = {
   },
   medium: {
     questionsPerLevel: 8,
-    minNumber: 50,
-    maxNumber: 99,
+    minNumber: 21,
+    maxNumber: 50,
     optionsCount: 4,
     hasTimer: true,
     timeLimitSeconds: 10,
@@ -103,7 +103,7 @@ export const DIFFICULTY_CONFIG: Record<Difficulty, DifficultyConfig> = {
   },
   hard: {
     questionsPerLevel: 10,
-    minNumber: 20,
+    minNumber: 50,
     maxNumber: 99,
     optionsCount: 4,
     hasTimer: true,

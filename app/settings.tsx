@@ -173,10 +173,10 @@ export default function SettingsScreen() {
           </View>
           <Text style={styles.difficultyDesc}>
             {settings.difficulty === 'easy'
-              ? 'Numbers 1-10, 3 options, 5 questions'
+              ? 'Numbers 1-20, 3 options, 5 questions'
               : settings.difficulty === 'medium'
-              ? 'Numbers 1-20, 4 options, 8 questions'
-              : 'Numbers 1-20, mixed types, 10 questions'}
+              ? 'Numbers 21-50, 4 options, 8 questions'
+              : 'Numbers 50-99, mixed types, 10 questions'}
           </Text>
         </View>
 
