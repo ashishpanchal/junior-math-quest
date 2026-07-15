@@ -1,9 +1,10 @@
 // ============================================================
 // Math Treasure Hunt - Sound Utility (Full Implementation)
 // Plays synthesized sounds + looping background music
+// Uses expo-audio (replaces deprecated expo-av)
 // ============================================================
 
-import { Audio, AVPlaybackSource } from 'expo-av';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import {
   SOUND_ACHIEVEMENT,
   SOUND_BUTTON,
@@ -72,15 +73,13 @@ export const playSound = async (type: SoundType): Promise<void> => {
     const uri = SOUND_MAP[type];
     if (!uri) return;
 
-    const { sound } = await Audio.Sound.createAsync(
-      { uri } as AVPlaybackSource,
-      { shouldPlay: true, volume: 1.0 }
-    );
+    const player = createAudioPlayer(uri);
+    player.play();
 
-    // Unload after playback to free memory
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if (status.isLoaded && status.didJustFinish) {
-        sound.unloadAsync();
+    // Release after playback to free memory
+    player.addListener('playbackStatusUpdate', (status) => {
+      if (status.playing === false && status.currentTime > 0) {
+        player.release();
       }
     });
   } catch (error) {
@@ -97,7 +96,7 @@ export const playSound = async (type: SoundType): Promise<void> => {
 export const playBackgroundMusic = async (): Promise<void> => {
   // Background music temporarily disabled.
   // To add proper music later, place an .mp3 file in assets/sounds/
-  // and load it here with { isLooping: true, volume: 0.25 }
+  // and load it here with createAudioPlayer + player.loop = true
 };
 
 /**
@@ -131,10 +130,10 @@ export const isMusicPlaying = (): boolean => false;
 /** Initialize audio configuration */
 export const initAudio = async (): Promise<void> => {
   try {
-    await Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-      shouldDuckAndroid: true,
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
+      interruptionMode: 'duckOthers',
     });
   } catch (error) {
     console.error('Error initializing audio:', error);
