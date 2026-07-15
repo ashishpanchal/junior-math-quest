@@ -26,10 +26,10 @@ jobs:
           node-version: "20"
 
       - name: Install dependencies
-        run: npm install
+        run: yarn install
 
       - name: Run lint
-        run: npm run lint
+        run: yarn lint
 
       - name: Run TypeScript type check
-        run: npx tsc --noEmit
+        run: yarn tsc --noEmit
