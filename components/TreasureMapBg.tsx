@@ -138,7 +138,7 @@ const BG_ELEMENTS = {
   ],
 };
 
-const GRADIENT_MAP: Record<string, readonly string[]> = {
+const GRADIENT_MAP: Record<string, readonly [string, string, ...string[]]> = {
   home: GRADIENTS.homeScreen,
   world: GRADIENTS.treasureMap,
   game: GRADIENTS.gameScreen,
@@ -153,7 +153,7 @@ export const TreasureMapBg: React.FC<TreasureMapBgProps> = ({
   const gradient = GRADIENT_MAP[variant];
 
   return (
-    <LinearGradient colors={gradient as unknown as string[]} style={styles.container}>
+    <LinearGradient colors={gradient} style={styles.container}>
       {/* Decorative dotted map lines */}
       <View style={styles.mapOverlay} pointerEvents="none">
         {/* Corner compass rose decoration */}
