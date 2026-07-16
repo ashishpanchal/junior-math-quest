@@ -1,0 +1,22 @@
+# Code Owners for Junior Math Quest
+# These users will be automatically requested for review on PRs
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+* @ashishpanchal
+
+# App screens and navigation
+/app/ @ashishpanchal
+
+# Shared components
+/components/ @ashishpanchal
+
+# Game logic and utilities
+/hooks/ @ashishpanchal
+/utils/ @ashishpanchal
+
+# Configuration and build
+/constants/ @ashishpanchal
+app.json @ashishpanchal
+package.json @ashishpanchal
+tsconfig.json @ashishpanchal
