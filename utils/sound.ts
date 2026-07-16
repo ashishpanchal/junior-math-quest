@@ -133,7 +133,6 @@ export const initAudio = async (): Promise<void> => {
     await setAudioModeAsync({
       playsInSilentMode: true,
       shouldPlayInBackground: false,
-      interruptionMode: 'duckOthers',
     });
   } catch (error) {
     console.error('Error initializing audio:', error);

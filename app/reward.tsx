@@ -5,7 +5,7 @@
 
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   FadeInDown,
   FadeInUp,
@@ -82,7 +82,11 @@ export default function RewardScreen() {
     <LinearGradient colors={['#FFD700', '#FF8C00']} style={styles.container}>
       <Confetti isActive={stars >= 2} />
 
-      <View style={[styles.content, { paddingTop: insets.top + SPACING.xl }]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.xl, paddingBottom: insets.bottom + SPACING.xl }]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Level complete title */}
         <Animated.View entering={FadeInDown.duration(600)}>
           <Text style={styles.title}>Level Complete!</Text>
@@ -157,15 +161,15 @@ export default function RewardScreen() {
             onPress={() => router.replace('/home')}
           />
         </Animated.View>
-      </View>
+      </ScrollView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  scrollView: { flex: 1 },
   content: {
-    flex: 1,
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
   },

@@ -6,7 +6,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef } from 'react';
-import { AppState, AppStateStatus, Platform } from 'react-native';
+import { AppState, AppStateStatus } from 'react-native';
 import { initAudio, pauseBackgroundMusic, resumeBackgroundMusic } from '../utils/sound';
 import { COLORS } from '../constants/theme';
 
@@ -40,15 +40,8 @@ export default function RootLayout() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: COLORS.background },
-          // Smooth transitions
           animation: 'fade_from_bottom',
-          animationDuration: 280,
           gestureEnabled: true,
-          gestureDirection: 'horizontal',
-          ...(Platform.OS === 'ios' && {
-            customAnimationOnGesture: true,
-            fullScreenGestureEnabled: true,
-          }),
         }}
       >
         <Stack.Screen
@@ -79,7 +72,6 @@ export default function RootLayout() {
           name="reward"
           options={{
             animation: 'fade',
-            animationDuration: 400,
             gestureEnabled: false,
           }}
         />
