@@ -59,6 +59,9 @@ export const LevelButton: React.FC<LevelButtonProps> = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={[styles.container, animatedStyle]}
+      accessibilityRole="button"
+      accessibilityLabel={isLocked ? `Level ${levelNumber}, locked` : `Level ${levelNumber}${stars > 0 ? `, ${stars} stars` : ''}`}
+      accessibilityState={{ disabled: isLocked }}
     >
       <View
         style={[

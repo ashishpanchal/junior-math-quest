@@ -5,7 +5,7 @@
 
 import { router } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   FadeInDown,
@@ -22,13 +22,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TreasureMapBg } from '../components/TreasureMapBg';
 import { CoinDisplay } from '../components/CoinDisplay';
-import { GameButton } from '../components/GameButton';
-import { TreasureChest } from '../components/TreasureChest';
 import { useGameProgress } from '../hooks/useGameProgress';
 import { playBackgroundMusic, isMusicPlaying } from '../utils/sound';
+import { isDailyChallengeCompleted } from '../utils/storage';
 import { BORDER_RADIUS, COLORS, FONTS, SHADOWS, SPACING, responsive } from '../constants/theme';
-
-const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -173,6 +170,34 @@ export default function HomeScreen() {
           style={styles.actionsRow}
         >
           <Pressable
+            onPress={() => router.push('/daily')}
+            style={styles.actionCard}
+          >
+            <LinearGradient
+              colors={isDailyChallengeCompleted(progress) ? ['#E8F5E9', '#C8E6C9'] : ['#FFF8E1', '#FFECB3']}
+              style={styles.actionGradient}
+            >
+              <Text style={styles.actionEmoji}>
+                {isDailyChallengeCompleted(progress) ? '✅' : '🎯'}
+              </Text>
+              <Text style={styles.actionLabel}>Daily</Text>
+            </LinearGradient>
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push('/speed-round')}
+            style={styles.actionCard}
+          >
+            <LinearGradient
+              colors={['#FBE9E7', '#FFCCBC']}
+              style={styles.actionGradient}
+            >
+              <Text style={styles.actionEmoji}>⚡</Text>
+              <Text style={styles.actionLabel}>Speed</Text>
+            </LinearGradient>
+          </Pressable>
+
+          <Pressable
             onPress={() => router.push('/profile')}
             style={styles.actionCard}
           >
@@ -197,18 +222,18 @@ export default function HomeScreen() {
               <Text style={styles.actionLabel}>Awards</Text>
             </LinearGradient>
           </Pressable>
+        </Animated.View>
 
+        {/* Settings (separate row) */}
+        <Animated.View
+          entering={FadeInUp.delay(900).duration(500)}
+          style={styles.settingsRow}
+        >
           <Pressable
             onPress={() => router.push('/settings')}
-            style={styles.actionCard}
+            style={styles.settingsButton}
           >
-            <LinearGradient
-              colors={['#F3E5F5', '#E1BEE7']}
-              style={styles.actionGradient}
-            >
-              <Text style={styles.actionEmoji}>⚙️</Text>
-              <Text style={styles.actionLabel}>Settings</Text>
-            </LinearGradient>
+            <Text style={styles.settingsText}>⚙️ Parent Settings</Text>
           </Pressable>
         </Animated.View>
 
@@ -400,6 +425,21 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.sm,
     fontWeight: FONTS.weights.bold,
     color: COLORS.textPrimary,
+  },
+  // Settings row
+  settingsRow: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: SPACING.lg,
+  },
+  settingsButton: {
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+  },
+  settingsText: {
+    fontSize: FONTS.sizes.sm,
+    fontWeight: FONTS.weights.medium,
+    color: COLORS.textSecondary,
   },
   // Stats
   statsCard: {

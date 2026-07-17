@@ -270,7 +270,24 @@ export const CORRECT_MESSAGES = [
   'Awesome! 🚀',
   'Well done! 👏',
   'Perfect! 💯',
+  'Math wizard! 🧙',
+  "You're on fire! 🔥",
+  'Treasure found! 💎',
+  'Incredible! 🌈',
+  'Wow wow wow! 🤩',
+  'Superstar! ✨',
+  'Nailed it! 🎯',
+  'Genius move! 🦉',
+  'Gold medal! 🥇',
+  'Spectacular! 🎆',
 ];
+
+/** Streak-specific messages shown when the player gets multiple correct in a row */
+export const STREAK_MESSAGES: Record<number, string> = {
+  3: "3 in a row! You're warming up! 🔥",
+  4: "4 in a row! Unstoppable! ⚡",
+  5: "5 in a row! AMAZING streak! 🌟🌟🌟",
+};
 
 /** Gentle messages for wrong answers */
 export const WRONG_MESSAGES = [
@@ -279,7 +296,86 @@ export const WRONG_MESSAGES = [
   'You can do it! 🌈',
   'Keep trying! ⭐',
   "No worries, try again! 😊",
+  "So close! One more try! 🎯",
+  "Think again, you got this! 🧠",
+  "Not quite, but you're learning! 📚",
 ];
+
+/** Story snippets shown between levels, keyed by worldId */
+export const WORLD_STORIES: Record<WorldId, string[]> = {
+  jungle: [
+    "🌴 You found a hidden path through the jungle vines!",
+    "🦜 A friendly parrot drops a clue: 'The treasure is near!'",
+    "💎 You spot a sparkling gem peeking through the leaves!",
+    "🐒 A playful monkey swings by with a golden key!",
+    "🌺 The jungle flowers bloom to reveal a secret trail!",
+    "🗺️ Your treasure map shows you're halfway there!",
+    "🌴 The ancient jungle temple is just ahead!",
+    "🦁 A wise lion says: 'Only the smartest explorers pass!'",
+    "💎 The ground sparkles — treasure is close!",
+    "🏆 The legendary jungle crown awaits the bravest explorer!",
+  ],
+  pirate: [
+    "🏴‍☠️ Captain says: 'Set sail for adventure, matey!'",
+    "⚓ You discover a message in a bottle with the next clue!",
+    "🦜 Polly the parrot squawks: 'Gold ahead! Gold ahead!'",
+    "🗺️ The pirate map reveals a secret island!",
+    "💰 You found a buried chest... but it needs more keys!",
+    "🌊 The waves carry whispers of hidden treasure!",
+    "🏝️ A mysterious island appears on the horizon!",
+    "⚓ Your ship sails closer to the legendary loot!",
+    "🦑 A friendly octopus guards the underwater caves!",
+    "🏴‍☠️ X marks the spot — the final treasure awaits!",
+  ],
+  space: [
+    "🚀 Houston, we have liftoff! Next planet ahead!",
+    "🌟 A shooting star leaves a trail of space gems!",
+    "👽 A friendly alien waves and shares a star crystal!",
+    "🪐 You're flying past Saturn's rings — so beautiful!",
+    "🛸 A UFO drops supplies for your mission!",
+    "🌌 The Milky Way sparkles with cosmic treasures!",
+    "☄️ A comet zooms by — ride its tail for a boost!",
+    "🌟 You discovered a new constellation!",
+    "🛸 The space station has a surprise waiting for you!",
+    "🚀 Final approach to the cosmic treasure vault!",
+  ],
+  dinosaur: [
+    "🦕 A gentle giant leads you deeper into the valley!",
+    "🥚 You found a glowing dino egg — what's inside?",
+    "🌋 The volcano rumbles... but you're safe on this path!",
+    "🦖 A baby T-Rex wants to play number games too!",
+    "🦴 Ancient fossils spell out a secret number code!",
+    "🌿 You find fresh dino footprints to follow!",
+    "🥚 The egg is cracking — a new dino friend hatches!",
+    "🦕 Your dino buddy carries you across the river!",
+    "🌋 The cave paintings show where treasure is hidden!",
+    "🦖 The Valley King welcomes you to his treasure cave!",
+  ],
+  candy: [
+    "🍭 Welcome to Candy Castle! Everything here is sweet!",
+    "🍬 Candy fairies sprinkle sugar on your path!",
+    "🧁 The Cupcake Bridge leads to the next room!",
+    "🎂 A layer cake tower reveals a secret passage!",
+    "🍫 The chocolate river carries golden candy coins!",
+    "🍪 Cookie crumbs show the way forward!",
+    "🍩 A donut wheel opens the next candy door!",
+    "🍭 The Lollipop Garden is blooming with treasures!",
+    "🧁 Sugar sprites dance to celebrate your progress!",
+    "👑 The Candy Queen's crown jewels are almost yours!",
+  ],
+  underwater: [
+    "🐠 A school of fish guides you deeper underwater!",
+    "🐙 A helpful octopus opens a treasure cave!",
+    "🐚 A magical seashell whispers the next clue!",
+    "🦈 A friendly shark gives you a ride to the reef!",
+    "🧜‍♀️ A mermaid shows you her pearl collection!",
+    "🌊 The current carries you to a glowing grotto!",
+    "🐠 Neon fish light up the dark ocean floor!",
+    "🐚 You found the legendary singing shell!",
+    "🦑 The Kraken isn't scary — he's guarding treasure!",
+    "🧜‍♀️ The Ocean Palace gates open just for you!",
+  ],
+};
 
 /** Default avatars for player profile */
 export const AVATARS = ['🦁', '🐱', '🐶', '🦊', '🐼', '🐨', '🦄', '🐸', '🐰', '🐻'];

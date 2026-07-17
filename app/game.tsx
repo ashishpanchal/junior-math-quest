@@ -8,8 +8,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
-  FadeIn,
-  FadeInDown,
   FadeInUp,
   SlideInRight,
   useAnimatedStyle,
@@ -28,7 +26,7 @@ import { CoinDisplay } from '../components/CoinDisplay';
 import { Confetti } from '../components/Confetti';
 import { useGameEngine } from '../hooks/useGameEngine';
 import { useGameProgress } from '../hooks/useGameProgress';
-import { CORRECT_MESSAGES, WRONG_MESSAGES, GAME_WORLDS } from '../constants/gameData';
+import { CORRECT_MESSAGES, WRONG_MESSAGES, STREAK_MESSAGES, GAME_WORLDS } from '../constants/gameData';
 import { BORDER_RADIUS, COLORS, FONTS, SHADOWS, SPACING, responsive } from '../constants/theme';
 import { Difficulty, LevelResult, WorldId } from '../types';
 
@@ -149,6 +147,8 @@ export default function GameScreen() {
   const [feedbackMsg, setFeedbackMsg] = useState('');
   const [coinsEarned, setCoinsEarned] = useState(0);
   const [showMiniConfetti, setShowMiniConfetti] = useState(false);
+  const [correctStreak, setCorrectStreak] = useState(0);
+  const [characterMood, setCharacterMood] = useState<'thinking' | 'happy' | 'celebrating' | 'encouraging'>('thinking');
 
   // Get timer settings from parent config
   const timerSeconds = progress?.settings?.timerSeconds ?? 10;
@@ -176,7 +176,6 @@ export default function GameScreen() {
     currentQuestion,
     currentIndex,
     totalQuestions,
-    correctCount,
     isAnswered,
     selectedAnswer,
     isCorrect,
@@ -191,14 +190,28 @@ export default function GameScreen() {
   const onAnswerPress = (answer: number) => {
     handleAnswer(answer);
     if (answer === currentQuestion?.correctAnswer) {
-      const msg = CORRECT_MESSAGES[Math.floor(Math.random() * CORRECT_MESSAGES.length)];
+      const newStreak = correctStreak + 1;
+      setCorrectStreak(newStreak);
+
+      // Use streak message if available, otherwise random correct message
+      const streakMsg = STREAK_MESSAGES[newStreak];
+      const msg = streakMsg || CORRECT_MESSAGES[Math.floor(Math.random() * CORRECT_MESSAGES.length)];
       setFeedbackMsg(msg);
       setCoinsEarned((prev) => prev + 5);
       setShowMiniConfetti(true);
       setTimeout(() => setShowMiniConfetti(false), 2000);
+
+      // Escalate character mood based on streak
+      if (newStreak >= 3) {
+        setCharacterMood('celebrating');
+      } else {
+        setCharacterMood('happy');
+      }
     } else {
+      setCorrectStreak(0);
       const msg = WRONG_MESSAGES[Math.floor(Math.random() * WRONG_MESSAGES.length)];
       setFeedbackMsg(msg);
+      setCharacterMood('encouraging');
     }
   };
 
@@ -259,9 +272,7 @@ export default function GameScreen() {
                 timer.isExpired
                   ? 'encouraging'
                   : isAnswered
-                  ? isCorrect
-                    ? 'happy'
-                    : 'encouraging'
+                  ? characterMood
                   : 'thinking'
               }
               size={responsive.font(50)}
@@ -333,7 +344,7 @@ export default function GameScreen() {
         {(isAnswered || (timerEnabled && timer.isExpired)) && (
           <Animated.View entering={FadeInUp.duration(300)} style={styles.actionContainer}>
             {isCorrect ? (
-              <Pressable onPress={handleNext} style={styles.actionButton}>
+              <Pressable onPress={() => { setCharacterMood('thinking'); handleNext(); }} style={styles.actionButton}>
                 <LinearGradient
                   colors={[COLORS.success, COLORS.greenDark]}
                   start={{ x: 0, y: 0 }}
@@ -346,7 +357,7 @@ export default function GameScreen() {
                 </LinearGradient>
               </Pressable>
             ) : (
-              <Pressable onPress={handleRetry} style={styles.actionButton}>
+              <Pressable onPress={() => { setCharacterMood('thinking'); handleRetry(); }} style={styles.actionButton}>
                 <LinearGradient
                   colors={[COLORS.primary, COLORS.primaryDark]}
                   start={{ x: 0, y: 0 }}
