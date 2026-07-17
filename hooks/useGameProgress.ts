@@ -4,6 +4,7 @@
 // ============================================================
 
 import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { GameProgress, WorldId } from '../types';
 import {
   completeLevel,
@@ -36,6 +37,20 @@ export const useGameProgress = () => {
     };
     load();
   }, []);
+
+  // Reload progress when screen gains focus (handles back navigation)
+  useFocusEffect(
+    useCallback(() => {
+      const reload = async () => {
+        const data = await loadProgress();
+        setProgress(data);
+        setSoundEnabled(data.settings.soundEffectsEnabled);
+        setMusicEnabled(data.settings.musicEnabled);
+        setHapticsEnabled(data.settings.hapticsEnabled);
+      };
+      reload();
+    }, [])
+  );
 
   // Sync settings whenever progress changes
   useEffect(() => {
