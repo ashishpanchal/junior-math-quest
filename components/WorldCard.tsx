@@ -57,6 +57,9 @@ export const WorldCard: React.FC<WorldCardProps> = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={[styles.container, animatedStyle]}
+      accessibilityRole="button"
+      accessibilityLabel={`${world.name}${isUnlocked ? `, ${starsEarned} stars earned` : `, locked, requires ${world.requiredStars} stars`}`}
+      accessibilityState={{ disabled: !isUnlocked }}
     >
       <LinearGradient
         colors={isUnlocked ? world.gradientColors : ['#BDC3C7', '#95A5A6']}

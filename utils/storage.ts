@@ -4,7 +4,7 @@
 // ============================================================
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Difficulty, GameProgress, GameSettings, PlayerProfile, WorldId } from '../types';
+import { Difficulty, DailyChallengeData, GameProgress, GameSettings, PlayerProfile, WorldId } from '../types';
 
 const STORAGE_KEY = '@math_treasure_hunt_progress';
 
@@ -47,6 +47,12 @@ const DEFAULT_PROGRESS: GameProgress = {
   achievements: [],
   coins: 0,
   totalStars: 0,
+  dailyChallenge: {
+    lastCompletedDate: null,
+    dailyStreak: 0,
+    completedDates: [],
+    speedRoundBest: 0,
+  },
 };
 
 /** Load game progress from storage */
@@ -168,4 +174,77 @@ export const resetProgress = async (): Promise<GameProgress> => {
 export const getDifficulty = async (): Promise<Difficulty> => {
   const progress = await loadProgress();
   return progress.settings.difficulty;
+};
+
+/** Complete today's daily challenge */
+export const completeDailyChallenge = async (coinsEarned: number): Promise<GameProgress> => {
+  const progress = await loadProgress();
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+  if (!progress.dailyChallenge) {
+    progress.dailyChallenge = {
+      lastCompletedDate: null,
+      dailyStreak: 0,
+      completedDates: [],
+      speedRoundBest: 0,
+    };
+  }
+
+  // Already completed today
+  if (progress.dailyChallenge.lastCompletedDate === today) {
+    return progress;
+  }
+
+  // Check if yesterday was completed for streak
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+  if (progress.dailyChallenge.lastCompletedDate === yesterdayStr) {
+    progress.dailyChallenge.dailyStreak += 1;
+  } else {
+    progress.dailyChallenge.dailyStreak = 1;
+  }
+
+  progress.dailyChallenge.lastCompletedDate = today;
+  progress.dailyChallenge.completedDates.push(today);
+
+  // Keep only last 30 days of history
+  if (progress.dailyChallenge.completedDates.length > 30) {
+    progress.dailyChallenge.completedDates = progress.dailyChallenge.completedDates.slice(-30);
+  }
+
+  // Add coins
+  progress.coins += coinsEarned;
+  progress.profile.coins = progress.coins;
+
+  await saveProgress(progress);
+  return progress;
+};
+
+/** Update speed round best score */
+export const updateSpeedRoundBest = async (score: number): Promise<GameProgress> => {
+  const progress = await loadProgress();
+
+  if (!progress.dailyChallenge) {
+    progress.dailyChallenge = {
+      lastCompletedDate: null,
+      dailyStreak: 0,
+      completedDates: [],
+      speedRoundBest: 0,
+    };
+  }
+
+  if (score > progress.dailyChallenge.speedRoundBest) {
+    progress.dailyChallenge.speedRoundBest = score;
+  }
+
+  await saveProgress(progress);
+  return progress;
+};
+
+/** Check if daily challenge is already completed today */
+export const isDailyChallengeCompleted = (progress: GameProgress): boolean => {
+  const today = new Date().toISOString().split('T')[0];
+  return progress.dailyChallenge?.lastCompletedDate === today;
 };

@@ -14,14 +14,24 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mathtreasure.hunt"
+      "bundleIdentifier": "com.mathtreasure.hunt",
+      "buildNumber": "1",
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFD700"
       },
-      "package": "com.mathtreasure.hunt"
+      "package": "com.mathtreasure.hunt",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",
@@ -33,6 +43,12 @@
       "expo-font",
       "expo-audio"
     ],
+    "updates": {
+      "url": "https://u.expo.dev/math-treasure-hunt"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "experiments": {
       "typedRoutes": true
     }

@@ -71,6 +71,9 @@ export const GameButton: React.FC<GameButtonProps> = ({
       onPressOut={handlePressOut}
       disabled={disabled}
       style={[animatedStyle, disabled && styles.disabled, style]}
+      accessibilityRole="button"
+      accessibilityLabel={`${emoji ? emoji + ' ' : ''}${title}`}
+      accessibilityState={{ disabled }}
     >
       <LinearGradient
         colors={disabled ? [COLORS.disabled, COLORS.disabled] : gradientColors}

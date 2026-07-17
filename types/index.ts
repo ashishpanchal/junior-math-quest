@@ -139,6 +139,20 @@ export interface GameProgress {
   achievements: string[];
   coins: number;
   totalStars: number;
+  /** Daily challenge tracking */
+  dailyChallenge?: DailyChallengeData;
+}
+
+/** Daily challenge persistence data */
+export interface DailyChallengeData {
+  /** Date string of last completed daily challenge */
+  lastCompletedDate: string | null;
+  /** Number of consecutive days completed */
+  dailyStreak: number;
+  /** Record of dates when daily was completed (ISO date strings) */
+  completedDates: string[];
+  /** Highest score in speed round mode */
+  speedRoundBest: number;
 }
 
 /** Answer result after player selects an option */

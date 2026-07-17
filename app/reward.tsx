@@ -25,7 +25,7 @@ import { TreasureChest } from '../components/TreasureChest';
 import { GameButton } from '../components/GameButton';
 import { rewardHaptic } from '../utils/haptics';
 import { playSound } from '../utils/sound';
-import { GAME_WORLDS } from '../constants/gameData';
+import { GAME_WORLDS, WORLD_STORIES } from '../constants/gameData';
 import { BORDER_RADIUS, COLORS, FONTS, SHADOWS, SPACING } from '../constants/theme';
 import { WorldId } from '../types';
 
@@ -126,6 +126,15 @@ export default function RewardScreen() {
           </View>
         </Animated.View>
 
+        {/* Story snippet — what happens next in the adventure */}
+        {WORLD_STORIES[worldId] && WORLD_STORIES[worldId][levelId - 1] && (
+          <Animated.View entering={FadeInDown.delay(1250).duration(500)} style={styles.storyCard}>
+            <Text style={styles.storyText}>
+              {WORLD_STORIES[worldId][levelId - 1]}
+            </Text>
+          </Animated.View>
+        )}
+
         {/* Buttons */}
         <Animated.View entering={FadeInUp.delay(1400).duration(500)} style={styles.buttons}>
           <GameButton
@@ -207,7 +216,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg,
     width: '100%',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
     ...SHADOWS.medium,
   },
   resultRow: {
@@ -236,6 +245,22 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     gap: SPACING.md,
+  },
+  storyCard: {
+    backgroundColor: 'rgba(255,255,255,0.75)',
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md,
+    width: '100%',
+    marginBottom: SPACING.lg,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF8C00',
+  },
+  storyText: {
+    fontSize: FONTS.sizes.md,
+    color: COLORS.textPrimary,
+    fontWeight: FONTS.weights.semibold,
+    fontStyle: 'italic',
+    lineHeight: 22,
   },
   button: {
     width: '100%',

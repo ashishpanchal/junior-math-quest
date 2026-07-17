@@ -154,6 +154,9 @@ export const AnswerButton: React.FC<AnswerButtonProps> = ({
       onPress={handlePress}
       disabled={disabled}
       style={[styles.wrapper, animatedStyle]}
+      accessibilityRole="button"
+      accessibilityLabel={`Answer ${answer}`}
+      accessibilityState={{ disabled, selected: isSelected }}
     >
       {/* Success glow */}
       {isRevealed && isSelected && isCorrect && (
