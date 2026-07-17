@@ -42,8 +42,8 @@ export class ErrorBoundary extends Component<Props, State> {
           <Text style={styles.emoji}>🗺️</Text>
           <Text style={styles.title}>Oops! Something went wrong</Text>
           <Text style={styles.message}>
-            Don't worry, your treasure is safe!{'\n'}
-            Let's try again.
+            Don{"'"}t worry, your treasure is safe!{'\n'}
+            Let{"'"}s try again.
           </Text>
           <Pressable
             style={styles.button}

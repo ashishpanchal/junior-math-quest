@@ -176,7 +176,6 @@ export default function GameScreen() {
     currentQuestion,
     currentIndex,
     totalQuestions,
-    correctCount,
     isAnswered,
     selectedAnswer,
     isCorrect,

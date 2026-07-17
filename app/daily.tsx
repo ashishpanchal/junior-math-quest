@@ -102,10 +102,10 @@ export default function DailyChallengeScreen() {
   }, [currentIndex, questions.length, progress, reload]);
 
   const dailyStreak = progress?.dailyChallenge?.dailyStreak ?? 0;
-  const completedDates = progress?.dailyChallenge?.completedDates ?? [];
 
   // Build last 7 days for calendar display
   const last7Days = useMemo(() => {
+    const dates = progress?.dailyChallenge?.completedDates ?? [];
     const days: { label: string; date: string; completed: boolean }[] = [];
     const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     for (let i = 6; i >= 0; i--) {
@@ -115,11 +115,11 @@ export default function DailyChallengeScreen() {
       days.push({
         label: dayNames[d.getDay()],
         date: dateStr,
-        completed: completedDates.includes(dateStr),
+        completed: dates.includes(dateStr),
       });
     }
     return days;
-  }, [completedDates]);
+  }, [progress?.dailyChallenge?.completedDates]);
 
   if (!progress) return null;
 

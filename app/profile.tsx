@@ -16,8 +16,6 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GameButton } from '../components/GameButton';
-import { StarRating } from '../components/StarRating';
-import { CoinDisplay } from '../components/CoinDisplay';
 import { useGameProgress } from '../hooks/useGameProgress';
 import { AVATARS } from '../constants/gameData';
 import { BORDER_RADIUS, COLORS, FONTS, SHADOWS, SPACING } from '../constants/theme';

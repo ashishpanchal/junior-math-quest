@@ -5,7 +5,7 @@
 
 import { router } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -18,7 +18,6 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
 
-const { width } = Dimensions.get('window');
 
 export default function SplashScreen() {
   const titleScale = useSharedValue(0);

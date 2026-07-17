@@ -66,10 +66,9 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { progress, isLoading, updateGameSettings, handleReset } = useGameProgress();
   const [showParentGate, setShowParentGate] = useState(true);
-  const [gateAnswer, setGateAnswer] = useState('');
 
   // Generate a random question each time the gate is shown
-  const gateQuestion = useMemo(() => generateParentGateQuestion(), [showParentGate]);
+  const gateQuestion = useMemo(() => generateParentGateQuestion(), []);
 
   if (isLoading || !progress) {
     return (

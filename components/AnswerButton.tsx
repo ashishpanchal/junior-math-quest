@@ -15,8 +15,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BORDER_RADIUS, COLORS, FONTS, SHADOWS, SPACING, responsive } from '../constants/theme';
+import { BORDER_RADIUS, COLORS, FONTS, SHADOWS, responsive } from '../constants/theme';
 import { lightHaptic } from '../utils/haptics';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -198,8 +197,6 @@ export const AnswerButton: React.FC<AnswerButtonProps> = ({
     </AnimatedPressable>
   );
 };
-
-const BUTTON_SIZE = responsive.scale(140);
 
 const styles = StyleSheet.create({
   wrapper: {

@@ -8,7 +8,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
-  FadeIn,
   FadeInDown,
   FadeInUp,
   SlideInRight,
@@ -47,7 +46,6 @@ export default function SpeedRoundScreen() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [isAnswered, setIsAnswered] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [isCorrect, setIsCorrect] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isNewBest, setIsNewBest] = useState(false);
 
@@ -144,7 +142,6 @@ export default function SpeedRoundScreen() {
       setIsAnswered(true);
 
       const correct = answer === currentQuestion?.correctAnswer;
-      setIsCorrect(correct);
 
       if (correct) {
         setScore((prev) => prev + 1);
@@ -157,7 +154,6 @@ export default function SpeedRoundScreen() {
             setQuestionIndex((prev) => prev + 1);
             setIsAnswered(false);
             setSelectedAnswer(null);
-            setIsCorrect(false);
           }
         }, 400);
       } else {
@@ -170,7 +166,6 @@ export default function SpeedRoundScreen() {
             setQuestionIndex((prev) => prev + 1);
             setIsAnswered(false);
             setSelectedAnswer(null);
-            setIsCorrect(false);
           }
         }, 800);
       }
@@ -225,7 +220,7 @@ export default function SpeedRoundScreen() {
         <Confetti isActive={showConfetti} />
         <View style={[styles.centeredContent, { paddingTop: insets.top + SPACING.xl }]}>
           <Animated.View entering={FadeInDown.duration(500)}>
-            <Text style={styles.finishTitle}>⏱️ Time's Up!</Text>
+            <Text style={styles.finishTitle}>⏱️ Time{"'"}s Up!</Text>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(300).duration(500)} style={styles.scoreCard}>

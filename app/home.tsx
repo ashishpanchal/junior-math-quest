@@ -5,7 +5,7 @@
 
 import { router } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   FadeInDown,
@@ -26,8 +26,6 @@ import { useGameProgress } from '../hooks/useGameProgress';
 import { playBackgroundMusic, isMusicPlaying } from '../utils/sound';
 import { isDailyChallengeCompleted } from '../utils/storage';
 import { BORDER_RADIUS, COLORS, FONTS, SHADOWS, SPACING, responsive } from '../constants/theme';
-
-const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
