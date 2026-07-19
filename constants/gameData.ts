@@ -118,6 +118,23 @@ export const DIFFICULTY_CONFIG: Record<Difficulty, DifficultyConfig> = {
       'shape_counting',
     ],
   },
+  expert: {
+    questionsPerLevel: 12,
+    minNumber: 100,
+    maxNumber: 999,
+    optionsCount: 4,
+    hasTimer: true,
+    timeLimitSeconds: 8,
+    questionTypes: [
+      'addition',
+      'subtraction',
+      'multiplication',
+      'division',
+      'multi_step',
+      'number_sequence',
+      'word_problem',
+    ],
+  },
 };
 
 /** Timer bonus coins for fast answers (answered with time remaining) */

@@ -4,17 +4,21 @@
 // ============================================================
 
 /** Difficulty levels available in the game */
-export type Difficulty = 'easy' | 'medium' | 'hard';
+export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
 
 /** All supported math question types */
 export type QuestionType =
   | 'addition'
   | 'subtraction'
+  | 'multiplication'
+  | 'division'
+  | 'multi_step'
   | 'counting'
   | 'comparison'
   | 'missing_number'
   | 'number_sequence'
-  | 'shape_counting';
+  | 'shape_counting'
+  | 'word_problem';
 
 /** A single math question */
 export interface MathQuestion {

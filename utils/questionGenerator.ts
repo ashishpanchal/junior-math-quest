@@ -29,6 +29,14 @@ const shuffle = <T>(arr: T[]): T[] => {
   return a;
 };
 
+/** Determine difficulty label from config */
+const getDifficultyFromConfig = (config: DifficultyConfig): Difficulty => {
+  if (config === DIFFICULTY_CONFIG.easy) return 'easy';
+  if (config === DIFFICULTY_CONFIG.medium) return 'medium';
+  if (config === DIFFICULTY_CONFIG.hard) return 'hard';
+  return 'expert';
+};
+
 /**
  * Generate distractor (wrong) answers close to the correct one.
  * Ensures no duplicates, no negatives, and keeps values in [min, max].
@@ -93,7 +101,7 @@ const generateAddition = (config: DifficultyConfig): MathQuestion => {
     question: `${a} + ${b} = ?`,
     options: buildOptions(correct, optionsCount, minNumber, maxNumber),
     correctAnswer: correct,
-    difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+    difficulty: getDifficultyFromConfig(config),
     timeLimit: timeLimitSeconds,
   };
 };
@@ -112,7 +120,7 @@ const generateSubtraction = (config: DifficultyConfig): MathQuestion => {
     question: `${a} - ${b} = ?`,
     options: buildOptions(correct, optionsCount, 0, maxNumber),
     correctAnswer: correct,
-    difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+    difficulty: getDifficultyFromConfig(config),
     timeLimit: timeLimitSeconds,
   };
 };
@@ -133,7 +141,7 @@ const generateCounting = (config: DifficultyConfig): MathQuestion => {
     visual,
     options: buildOptions(count, optionsCount, 1, 15),
     correctAnswer: count,
-    difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+    difficulty: getDifficultyFromConfig(config),
     timeLimit: timeLimitSeconds,
   };
 };
@@ -168,7 +176,7 @@ const generateComparison = (config: DifficultyConfig): MathQuestion => {
     question: `Which number is ${keyword}?\n${a}  or  ${b}`,
     options: shuffle(opts),
     correctAnswer: correct,
-    difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+    difficulty: getDifficultyFromConfig(config),
     timeLimit: timeLimitSeconds,
   };
 };
@@ -209,7 +217,7 @@ const generateMissingNumber = (config: DifficultyConfig): MathQuestion => {
     question,
     options: buildOptions(correct, optionsCount, Math.max(0, correct - 5), correct + 5),
     correctAnswer: correct,
-    difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+    difficulty: getDifficultyFromConfig(config),
     timeLimit: timeLimitSeconds,
   };
 };
@@ -245,7 +253,7 @@ const generateNumberSequence = (config: DifficultyConfig): MathQuestion => {
       question: `What comes next?\n${safeTerms.join(', ')}, ?`,
       options: buildOptions(safeCorrect, optionsCount, safeCorrect - 10, safeCorrect + 10),
       correctAnswer: safeCorrect,
-      difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+      difficulty: getDifficultyFromConfig(config),
       timeLimit: timeLimitSeconds,
     };
   }
@@ -256,7 +264,147 @@ const generateNumberSequence = (config: DifficultyConfig): MathQuestion => {
     question: `What comes next?\n${terms.join(', ')}, ?`,
     options: buildOptions(correct, optionsCount, Math.max(0, correct - 10), correct + 10),
     correctAnswer: correct,
-    difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+    difficulty: getDifficultyFromConfig(config),
+    timeLimit: timeLimitSeconds,
+  };
+};
+
+/** Multiplication: a × b = ? */
+const generateMultiplication = (config: DifficultyConfig): MathQuestion => {
+  const { optionsCount, timeLimitSeconds } = config;
+  const isExpert = config === DIFFICULTY_CONFIG.expert;
+
+  // Expert: up to 12×12; otherwise simpler tables
+  const a = isExpert ? randInt(4, 12) : randInt(2, 9);
+  const b = isExpert ? randInt(4, 12) : randInt(2, 9);
+  const correct = a * b;
+
+  return {
+    id: uid(),
+    type: 'multiplication',
+    question: `${a} × ${b} = ?`,
+    options: buildOptions(correct, optionsCount, Math.max(1, correct - 15), correct + 15),
+    correctAnswer: correct,
+    difficulty: getDifficultyFromConfig(config),
+    timeLimit: timeLimitSeconds,
+  };
+};
+
+/** Division: a ÷ b = ? (always exact division, no remainders) */
+const generateDivision = (config: DifficultyConfig): MathQuestion => {
+  const { optionsCount, timeLimitSeconds } = config;
+  const isExpert = config === DIFFICULTY_CONFIG.expert;
+
+  // Generate by working backwards: pick answer and divisor, compute dividend
+  const answer = isExpert ? randInt(3, 15) : randInt(2, 10);
+  const divisor = isExpert ? randInt(3, 12) : randInt(2, 9);
+  const dividend = answer * divisor;
+
+  return {
+    id: uid(),
+    type: 'division',
+    question: `${dividend} ÷ ${divisor} = ?`,
+    options: buildOptions(answer, optionsCount, Math.max(1, answer - 8), answer + 8),
+    correctAnswer: answer,
+    difficulty: getDifficultyFromConfig(config),
+    timeLimit: timeLimitSeconds,
+  };
+};
+
+/** Multi-step: a OP b OP c = ? (two operations chained) */
+const generateMultiStep = (config: DifficultyConfig): MathQuestion => {
+  const { optionsCount, timeLimitSeconds } = config;
+
+  const ops = ['+', '-'] as const;
+  const op1 = pick(ops);
+  const op2 = pick(ops);
+
+  // Keep numbers manageable for mental math
+  const a = randInt(10, 50);
+  let b = randInt(5, 30);
+  let c = randInt(5, 20);
+
+  // Compute step by step ensuring no negatives
+  let intermediate = op1 === '+' ? a + b : a - b;
+  if (intermediate < 0) {
+    b = randInt(1, a - 1);
+    intermediate = a - b;
+  }
+
+  let correct = op2 === '+' ? intermediate + c : intermediate - c;
+  if (correct < 0) {
+    c = randInt(1, intermediate - 1);
+    correct = intermediate - c;
+  }
+
+  const question = `${a} ${op1} ${b} ${op2} ${c} = ?`;
+
+  return {
+    id: uid(),
+    type: 'multi_step',
+    question,
+    options: buildOptions(correct, optionsCount, Math.max(0, correct - 12), correct + 12),
+    correctAnswer: correct,
+    difficulty: 'expert',
+    timeLimit: timeLimitSeconds,
+  };
+};
+
+/** Word problem: contextual math story */
+const generateWordProblem = (config: DifficultyConfig): MathQuestion => {
+  const { optionsCount, timeLimitSeconds } = config;
+
+  const templates = [
+    () => {
+      const total = randInt(20, 60);
+      const gave = randInt(5, total - 5);
+      const correct = total - gave;
+      return { question: `Ali has ${total} stickers. He gives ${gave} to Sam.\nHow many does Ali have left?`, correct };
+    },
+    () => {
+      const perBox = randInt(4, 10);
+      const boxes = randInt(3, 8);
+      const correct = perBox * boxes;
+      return { question: `There are ${boxes} boxes with ${perBox} apples each.\nHow many apples in total?`, correct };
+    },
+    () => {
+      const total = randInt(20, 50);
+      const groups = pick([2, 4, 5, 10] as const);
+      const safeTotal = total - (total % groups); // ensure clean division
+      const correct = safeTotal / groups;
+      return { question: `${safeTotal} candies shared equally among ${groups} friends.\nHow many does each get?`, correct };
+    },
+    () => {
+      const a = randInt(15, 40);
+      const b = randInt(10, 30);
+      const correct = a + b;
+      return { question: `Mia scored ${a} points in round 1 and ${b} in round 2.\nWhat is her total score?`, correct };
+    },
+    () => {
+      const price = randInt(5, 15);
+      const count = randInt(3, 7);
+      const correct = price * count;
+      return { question: `Each toy costs $${price}.\nHow much for ${count} toys?`, correct };
+    },
+    () => {
+      const start = randInt(30, 80);
+      const ate = randInt(5, 15);
+      const bought = randInt(10, 20);
+      const correct = start - ate + bought;
+      return { question: `You have ${start} coins. You spend ${ate} and earn ${bought}.\nHow many coins now?`, correct };
+    },
+  ];
+
+  const template = pick(templates);
+  const { question, correct } = template();
+
+  return {
+    id: uid(),
+    type: 'word_problem',
+    question,
+    options: buildOptions(correct, optionsCount, Math.max(0, correct - 10), correct + 10),
+    correctAnswer: correct,
+    difficulty: 'expert',
     timeLimit: timeLimitSeconds,
   };
 };
@@ -306,7 +454,7 @@ const generateShapeCounting = (config: DifficultyConfig): MathQuestion => {
     visual,
     options: buildOptions(targetCount, optionsCount, 1, targetCount + 5),
     correctAnswer: targetCount,
-    difficulty: config === DIFFICULTY_CONFIG.easy ? 'easy' : config === DIFFICULTY_CONFIG.medium ? 'medium' : 'hard',
+    difficulty: getDifficultyFromConfig(config),
     timeLimit: timeLimitSeconds,
   };
 };
@@ -317,11 +465,15 @@ const generateShapeCounting = (config: DifficultyConfig): MathQuestion => {
 const GENERATORS: Record<QuestionType, (config: DifficultyConfig) => MathQuestion> = {
   addition: generateAddition,
   subtraction: generateSubtraction,
+  multiplication: generateMultiplication,
+  division: generateDivision,
+  multi_step: generateMultiStep,
   counting: generateCounting,
   comparison: generateComparison,
   missing_number: generateMissingNumber,
   number_sequence: generateNumberSequence,
   shape_counting: generateShapeCounting,
+  word_problem: generateWordProblem,
 };
 
 // ─── Public API ──────────────────────────────────────────────

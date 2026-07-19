@@ -303,6 +303,10 @@ export default function GameScreen() {
               <Text style={styles.typeBadgeText}>
                 {currentQuestion.type === 'addition' ? '➕' :
                  currentQuestion.type === 'subtraction' ? '➖' :
+                 currentQuestion.type === 'multiplication' ? '✖️' :
+                 currentQuestion.type === 'division' ? '➗' :
+                 currentQuestion.type === 'multi_step' ? '🧮' :
+                 currentQuestion.type === 'word_problem' ? '📖' :
                  currentQuestion.type === 'counting' ? '🔢' :
                  currentQuestion.type === 'comparison' ? '⚖️' :
                  currentQuestion.type === 'missing_number' ? '❓' :
