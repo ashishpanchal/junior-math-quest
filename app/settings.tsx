@@ -194,7 +194,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Difficulty</Text>
           <View style={styles.difficultyRow}>
-            {(['easy', 'medium', 'hard'] as Difficulty[]).map((diff) => (
+            {(['easy', 'medium', 'hard', 'expert'] as Difficulty[]).map((diff) => (
               <Pressable
                 key={diff}
                 onPress={() => setDifficulty(diff)}
@@ -209,17 +209,19 @@ export default function SettingsScreen() {
                     settings.difficulty === diff && styles.difficultyTextActive,
                   ]}
                 >
-                  {diff === 'easy' ? '🌱 Easy' : diff === 'medium' ? '🌿 Medium' : '🌳 Hard'}
+                  {diff === 'easy' ? '🌱 Easy' : diff === 'medium' ? '🌿 Medium' : diff === 'hard' ? '🌳 Hard' : '🧠 Expert'}
                 </Text>
               </Pressable>
             ))}
           </View>
           <Text style={styles.difficultyDesc}>
             {settings.difficulty === 'easy'
-              ? 'Numbers 1-20, 3 options, 5 questions'
+              ? '🧒 Ages 5+ · Numbers 1-20, 3 options, 5 questions'
               : settings.difficulty === 'medium'
-              ? 'Numbers 21-50, 4 options, 8 questions'
-              : 'Numbers 50-99, mixed types, 10 questions'}
+              ? '🧒 Ages 6+ · Numbers 21-50, 4 options, 8 questions'
+              : settings.difficulty === 'hard'
+              ? '🧒 Ages 7-8 · Numbers 50-99, mixed types, 10 questions'
+              : '🧒 Ages 7-8 (Abacus) · ×, ÷, multi-step, word problems, 8s timer'}
           </Text>
         </View>
 
@@ -346,17 +348,18 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   },
   settingLabel: { fontSize: FONTS.sizes.md, color: COLORS.textPrimary },
-  difficultyRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.sm },
+  difficultyRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginBottom: SPACING.sm },
   difficultyButton: {
-    flex: 1,
-    paddingVertical: SPACING.sm,
+    width: '47%',
+    paddingVertical: SPACING.md,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 2,
     borderColor: COLORS.border,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   difficultyActive: { borderColor: COLORS.primary, backgroundColor: COLORS.surfaceLight },
-  difficultyText: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
+  difficultyText: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, textAlign: 'center' },
   difficultyTextActive: { color: COLORS.primary, fontWeight: FONTS.weights.bold },
   difficultyDesc: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, textAlign: 'center' },
   // Timer settings
