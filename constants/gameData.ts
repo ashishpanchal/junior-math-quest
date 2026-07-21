@@ -135,6 +135,22 @@ export const DIFFICULTY_CONFIG: Record<Difficulty, DifficultyConfig> = {
       'word_problem',
     ],
   },
+  master: {
+    questionsPerLevel: 15,
+    minNumber: 100,
+    maxNumber: 9999,
+    optionsCount: 4,
+    hasTimer: true,
+    timeLimitSeconds: 5,
+    questionTypes: [
+      'addition',
+      'subtraction',
+      'multiplication',
+      'division',
+      'multi_step',
+      'word_problem',
+    ],
+  },
 };
 
 /** Timer bonus coins for fast answers (answered with time remaining) */

@@ -194,7 +194,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Difficulty</Text>
           <View style={styles.difficultyRow}>
-            {(['easy', 'medium', 'hard', 'expert'] as Difficulty[]).map((diff) => (
+            {(['easy', 'medium', 'hard', 'expert', 'master'] as Difficulty[]).map((diff) => (
               <Pressable
                 key={diff}
                 onPress={() => setDifficulty(diff)}
@@ -209,7 +209,7 @@ export default function SettingsScreen() {
                     settings.difficulty === diff && styles.difficultyTextActive,
                   ]}
                 >
-                  {diff === 'easy' ? '🌱 Easy' : diff === 'medium' ? '🌿 Medium' : diff === 'hard' ? '🌳 Hard' : '🧠 Expert'}
+                  {diff === 'easy' ? '🌱 Easy' : diff === 'medium' ? '🌿 Medium' : diff === 'hard' ? '🌳 Hard' : diff === 'expert' ? '🧠 Expert' : '🏆 Master'}
                 </Text>
               </Pressable>
             ))}
@@ -221,7 +221,9 @@ export default function SettingsScreen() {
               ? '🧒 Ages 6+ · Numbers 21-50, 4 options, 8 questions'
               : settings.difficulty === 'hard'
               ? '🧒 Ages 7-8 · Numbers 50-99, mixed types, 10 questions'
-              : '🧒 Ages 7-8 (Abacus) · ×, ÷, multi-step, word problems, 8s timer'}
+              : settings.difficulty === 'expert'
+              ? '🧒 Ages 7-8 (Abacus) · ×, ÷, multi-step, word problems, 8s timer'
+              : '🧒 Ages 7-8 (Abacus Pro) · Large numbers, 2-digit ×, 3-4 step chains, 5s timer'}
           </Text>
         </View>
 

@@ -34,7 +34,8 @@ const getDifficultyFromConfig = (config: DifficultyConfig): Difficulty => {
   if (config === DIFFICULTY_CONFIG.easy) return 'easy';
   if (config === DIFFICULTY_CONFIG.medium) return 'medium';
   if (config === DIFFICULTY_CONFIG.hard) return 'hard';
-  return 'expert';
+  if (config === DIFFICULTY_CONFIG.expert) return 'expert';
+  return 'master';
 };
 
 /**
@@ -90,16 +91,22 @@ const buildOptions = (
 /** Addition: a + b = ? (result stays within maxNumber) */
 const generateAddition = (config: DifficultyConfig): MathQuestion => {
   const { minNumber, maxNumber, optionsCount, timeLimitSeconds } = config;
-  // Pick two numbers whose sum doesn't exceed maxNumber
-  const a = randInt(minNumber, Math.floor(maxNumber * 0.6));
-  const b = randInt(1, Math.min(maxNumber - a, Math.floor(maxNumber * 0.5)));
+  const isMaster = config === DIFFICULTY_CONFIG.master;
+
+  // Master: 3-digit + 3-digit; others: stay within range
+  const a = isMaster
+    ? randInt(100, 999)
+    : randInt(minNumber, Math.floor(maxNumber * 0.6));
+  const b = isMaster
+    ? randInt(100, 999)
+    : randInt(1, Math.min(maxNumber - a, Math.floor(maxNumber * 0.5)));
   const correct = a + b;
 
   return {
     id: uid(),
     type: 'addition',
     question: `${a} + ${b} = ?`,
-    options: buildOptions(correct, optionsCount, minNumber, maxNumber),
+    options: buildOptions(correct, optionsCount, Math.max(minNumber, correct - 20), correct + 20),
     correctAnswer: correct,
     difficulty: getDifficultyFromConfig(config),
     timeLimit: timeLimitSeconds,
@@ -109,16 +116,22 @@ const generateAddition = (config: DifficultyConfig): MathQuestion => {
 /** Subtraction: a - b = ? (no negative results, result >= 0) */
 const generateSubtraction = (config: DifficultyConfig): MathQuestion => {
   const { minNumber, maxNumber, optionsCount, timeLimitSeconds } = config;
-  // Ensure a > b so result is positive
-  const a = randInt(Math.max(minNumber, 10), maxNumber);
-  const b = randInt(1, a - 1);
+  const isMaster = config === DIFFICULTY_CONFIG.master;
+
+  // Master: 3-4 digit - 3 digit; others: stay within range
+  const a = isMaster
+    ? randInt(500, 2000)
+    : randInt(Math.max(minNumber, 10), maxNumber);
+  const b = isMaster
+    ? randInt(100, a - 50)
+    : randInt(1, a - 1);
   const correct = a - b;
 
   return {
     id: uid(),
     type: 'subtraction',
     question: `${a} - ${b} = ?`,
-    options: buildOptions(correct, optionsCount, 0, maxNumber),
+    options: buildOptions(correct, optionsCount, Math.max(0, correct - 20), correct + 20),
     correctAnswer: correct,
     difficulty: getDifficultyFromConfig(config),
     timeLimit: timeLimitSeconds,
@@ -272,18 +285,33 @@ const generateNumberSequence = (config: DifficultyConfig): MathQuestion => {
 /** Multiplication: a × b = ? */
 const generateMultiplication = (config: DifficultyConfig): MathQuestion => {
   const { optionsCount, timeLimitSeconds } = config;
+  const isMaster = config === DIFFICULTY_CONFIG.master;
   const isExpert = config === DIFFICULTY_CONFIG.expert;
 
-  // Expert: up to 12×12; otherwise simpler tables
-  const a = isExpert ? randInt(4, 12) : randInt(2, 9);
-  const b = isExpert ? randInt(4, 12) : randInt(2, 9);
+  let a: number;
+  let b: number;
+
+  if (isMaster) {
+    // 2-digit × 1-digit (e.g. 23 × 7, 45 × 8)
+    a = randInt(12, 50);
+    b = randInt(4, 12);
+  } else if (isExpert) {
+    // Up to 12×12
+    a = randInt(4, 12);
+    b = randInt(4, 12);
+  } else {
+    // Simpler tables
+    a = randInt(2, 9);
+    b = randInt(2, 9);
+  }
+
   const correct = a * b;
 
   return {
     id: uid(),
     type: 'multiplication',
     question: `${a} × ${b} = ?`,
-    options: buildOptions(correct, optionsCount, Math.max(1, correct - 15), correct + 15),
+    options: buildOptions(correct, optionsCount, Math.max(1, correct - 20), correct + 20),
     correctAnswer: correct,
     difficulty: getDifficultyFromConfig(config),
     timeLimit: timeLimitSeconds,
@@ -293,38 +321,101 @@ const generateMultiplication = (config: DifficultyConfig): MathQuestion => {
 /** Division: a ÷ b = ? (always exact division, no remainders) */
 const generateDivision = (config: DifficultyConfig): MathQuestion => {
   const { optionsCount, timeLimitSeconds } = config;
+  const isMaster = config === DIFFICULTY_CONFIG.master;
   const isExpert = config === DIFFICULTY_CONFIG.expert;
 
-  // Generate by working backwards: pick answer and divisor, compute dividend
-  const answer = isExpert ? randInt(3, 15) : randInt(2, 10);
-  const divisor = isExpert ? randInt(3, 12) : randInt(2, 9);
+  let answer: number;
+  let divisor: number;
+
+  if (isMaster) {
+    // Larger: answer 5-25, divisor 6-15 (e.g. 180 ÷ 12 = 15)
+    answer = randInt(5, 25);
+    divisor = randInt(6, 15);
+  } else if (isExpert) {
+    answer = randInt(3, 15);
+    divisor = randInt(3, 12);
+  } else {
+    answer = randInt(2, 10);
+    divisor = randInt(2, 9);
+  }
+
   const dividend = answer * divisor;
 
   return {
     id: uid(),
     type: 'division',
     question: `${dividend} ÷ ${divisor} = ?`,
-    options: buildOptions(answer, optionsCount, Math.max(1, answer - 8), answer + 8),
+    options: buildOptions(answer, optionsCount, Math.max(1, answer - 10), answer + 10),
     correctAnswer: answer,
     difficulty: getDifficultyFromConfig(config),
     timeLimit: timeLimitSeconds,
   };
 };
 
-/** Multi-step: a OP b OP c = ? (two operations chained) */
+/** Multi-step: chained operations (2-step for expert, 3-4 step for master) */
 const generateMultiStep = (config: DifficultyConfig): MathQuestion => {
   const { optionsCount, timeLimitSeconds } = config;
+  const isMaster = config === DIFFICULTY_CONFIG.master;
 
   const ops = ['+', '-'] as const;
+
+  if (isMaster) {
+    // 3-4 step chain with larger numbers
+    const numOps = randInt(3, 4);
+    const numbers: number[] = [randInt(50, 200)];
+    const chosenOps: ('+' | '-')[] = [];
+
+    for (let i = 0; i < numOps; i++) {
+      const op = pick(ops);
+      chosenOps.push(op);
+      // Keep numbers reasonable and ensure no negatives
+      const currentSum = numbers.reduce((acc, n, idx) => {
+        if (idx === 0) return n;
+        return chosenOps[idx - 1] === '+' ? acc + n : acc - n;
+      }, 0);
+      const maxVal = op === '-' ? Math.min(currentSum - 5, 80) : 80;
+      numbers.push(randInt(10, Math.max(15, maxVal)));
+    }
+
+    // Calculate result
+    let result = numbers[0];
+    for (let i = 0; i < chosenOps.length; i++) {
+      result = chosenOps[i] === '+' ? result + numbers[i + 1] : result - numbers[i + 1];
+    }
+
+    // If result goes negative, flip the last subtraction to addition
+    if (result < 0) {
+      chosenOps[chosenOps.length - 1] = '+';
+      result = numbers[0];
+      for (let i = 0; i < chosenOps.length; i++) {
+        result = chosenOps[i] === '+' ? result + numbers[i + 1] : result - numbers[i + 1];
+      }
+    }
+
+    const question = numbers.reduce((q, n, i) => {
+      if (i === 0) return `${n}`;
+      return `${q} ${chosenOps[i - 1]} ${n}`;
+    }, '') + ' = ?';
+
+    return {
+      id: uid(),
+      type: 'multi_step',
+      question,
+      options: buildOptions(result, optionsCount, Math.max(0, result - 20), result + 20),
+      correctAnswer: result,
+      difficulty: 'master',
+      timeLimit: timeLimitSeconds,
+    };
+  }
+
+  // Expert: 2-step
   const op1 = pick(ops);
   const op2 = pick(ops);
 
-  // Keep numbers manageable for mental math
   const a = randInt(10, 50);
   let b = randInt(5, 30);
   let c = randInt(5, 20);
 
-  // Compute step by step ensuring no negatives
   let intermediate = op1 === '+' ? a + b : a - b;
   if (intermediate < 0) {
     b = randInt(1, a - 1);
@@ -353,8 +444,9 @@ const generateMultiStep = (config: DifficultyConfig): MathQuestion => {
 /** Word problem: contextual math story */
 const generateWordProblem = (config: DifficultyConfig): MathQuestion => {
   const { optionsCount, timeLimitSeconds } = config;
+  const isMaster = config === DIFFICULTY_CONFIG.master;
 
-  const templates = [
+  const easyTemplates = [
     () => {
       const total = randInt(20, 60);
       const gave = randInt(5, total - 5);
@@ -370,7 +462,7 @@ const generateWordProblem = (config: DifficultyConfig): MathQuestion => {
     () => {
       const total = randInt(20, 50);
       const groups = pick([2, 4, 5, 10] as const);
-      const safeTotal = total - (total % groups); // ensure clean division
+      const safeTotal = total - (total % groups);
       const correct = safeTotal / groups;
       return { question: `${safeTotal} candies shared equally among ${groups} friends.\nHow many does each get?`, correct };
     },
@@ -395,6 +487,51 @@ const generateWordProblem = (config: DifficultyConfig): MathQuestion => {
     },
   ];
 
+  const masterTemplates = [
+    () => {
+      const perShelf = randInt(12, 25);
+      const shelves = randInt(6, 12);
+      const correct = perShelf * shelves;
+      return { question: `A library has ${shelves} shelves with ${perShelf} books each.\nHow many books in total?`, correct };
+    },
+    () => {
+      const total = randInt(150, 300);
+      const perBag = randInt(8, 15);
+      const bags = Math.floor(total / perBag);
+      const correct = bags;
+      const safeTotal = bags * perBag;
+      return { question: `${safeTotal} marbles are packed into bags of ${perBag}.\nHow many bags are needed?`, correct };
+    },
+    () => {
+      const a = randInt(100, 300);
+      const b = randInt(80, 200);
+      const c = randInt(50, 150);
+      const correct = a + b - c;
+      return { question: `A shop had ${a} items. They received ${b} more, then sold ${c}.\nHow many items now?`, correct };
+    },
+    () => {
+      const price = randInt(12, 35);
+      const count = randInt(4, 9);
+      const paid = price * count + randInt(5, 20);
+      const correct = paid - (price * count);
+      return { question: `${count} books cost $${price} each. You pay $${paid}.\nHow much change do you get?`, correct };
+    },
+    () => {
+      const rows = randInt(8, 15);
+      const cols = randInt(6, 12);
+      const broken = randInt(5, 15);
+      const correct = (rows * cols) - broken;
+      return { question: `A hall has ${rows} rows of ${cols} chairs. ${broken} are broken.\nHow many working chairs?`, correct };
+    },
+    () => {
+      const km = randInt(12, 30);
+      const trips = randInt(4, 8);
+      const correct = km * trips;
+      return { question: `A bus travels ${km} km per trip.\nHow far after ${trips} trips?`, correct };
+    },
+  ];
+
+  const templates = isMaster ? masterTemplates : easyTemplates;
   const template = pick(templates);
   const { question, correct } = template();
 
@@ -402,9 +539,9 @@ const generateWordProblem = (config: DifficultyConfig): MathQuestion => {
     id: uid(),
     type: 'word_problem',
     question,
-    options: buildOptions(correct, optionsCount, Math.max(0, correct - 10), correct + 10),
+    options: buildOptions(correct, optionsCount, Math.max(0, correct - 15), correct + 15),
     correctAnswer: correct,
-    difficulty: 'expert',
+    difficulty: getDifficultyFromConfig(config),
     timeLimit: timeLimitSeconds,
   };
 };
