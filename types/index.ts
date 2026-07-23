@@ -4,7 +4,7 @@
 // ============================================================
 
 /** Difficulty levels available in the game */
-export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
+export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert' | 'master';
 
 /** All supported math question types */
 export type QuestionType =
